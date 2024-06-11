@@ -1,0 +1,19 @@
+{% extends 'blog/base.html' %}
+<!-- 开始定义页面内容区域 -->
+{% block content %}
+    <!-- 遍历所有文章 -->
+    {% for post in posts %}
+        <!-- 文章容器 -->
+        <article class="post">
+            <!-- 显示文章发表时间 -->
+            <time class="date">
+                {{ post.published_date }}
+            </time>
+            <!-- 显示文章标题，并链接到文章详情页 -->
+            <h2><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
+            <!-- 显示文章内容，将换行转换为br标签 -->
+            <p>{{ post.text|linebreaksbr }}</p>
+        </article>
+    {% endfor %}
+<!-- 结束页面内容区域的定义 -->
+{% endblock %}

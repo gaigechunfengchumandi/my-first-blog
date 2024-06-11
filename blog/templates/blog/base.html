@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>儿童静态心电自动诊断系统</title>
+        <!--安装 Bootstrap，这不会向项目添加任何文件。它仅指向 Internet 上存在的文件--> 
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+        
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lobster&subset=latin,latin-ext">
+        <!-- 加载静态文件，告诉我们的模板我们的CSS文件在哪里 -->
+        <link rel="stylesheet" href="{% static 'css/blog.css' %}">
+    </head>
+    <body>
+        <header class="page-header">
+          <div class="container">
+            <a href="{% url 'post_new' %}" class="top-menu">
+                {% include './icons/file-earmark-plus.svg' %}
+            </a>
+            <h1><a href="/">儿童静态心电自动诊断系统</a></h1>
+          </div>
+        </header>
+        <main class="container">
+            <div class="row">
+                <div class="col">
+                {% block content %}
+                {% endblock %}
+                </div>
+            </div>
+        </main>
+    </body>
+</html>
+
+ <!-- 这是一个单行注释 -->

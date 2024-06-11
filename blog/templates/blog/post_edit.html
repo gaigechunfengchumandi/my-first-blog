@@ -1,0 +1,15 @@
+{% extends 'blog/base.html' %}
+
+<!-- 定义内容区块，用于在父模板中插入具体的内容 -->
+{% block content %}
+    <!-- 显示新建帖子的标题 -->
+    <h2>New post</h2>
+    <!-- 创建一个表单，用于提交新的帖子内容 -->
+    <!-- 使用POST方法提交表单数据，添加CSRF令牌以防止跨站请求伪造 -->
+    <form method="POST" class="post-form">{% csrf_token %}
+        <!-- 将表单字段以段落形式渲染，提高表单的可读性 -->
+        {{ form.as_p }}
+        <!-- 提交按钮，用于提交表单数据，保存新的帖子 -->
+        <button type="submit" class="save btn btn-secondary">Save</button>
+    </form>
+{% endblock %}
