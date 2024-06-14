@@ -4,6 +4,8 @@ from .models import Post
 from django.shortcuts import render, get_object_or_404
 from .forms import PostForm
 from django.shortcuts import redirect
+from django.http import JsonResponse
+
 
 #
 def post_list(request):
@@ -66,6 +68,7 @@ def post_new(request):
     return render(request, 'blog/post_edit.html', {'form': form})
 
 def post_edit(request, pk):
+
     post = get_object_or_404(Post, pk=pk)
     if request.method == "POST":
         form = PostForm(request.POST, instance=post)
@@ -78,3 +81,12 @@ def post_edit(request, pk):
     else:
         form = PostForm(instance=post)
     return render(request, 'blog/post_edit.html', {'form': form})
+
+
+def upload_file(request):
+    if request.method == 'POST' and request.FILES.get('file'):
+        file = request.FILES['file']
+        content = file.read().decode('utf-8')
+        # 这里可以对文件内容进行进一步处理，比如保存到数据库中
+        return JsonResponse({'message': '文件上传成功', 'content': content})
+    return JsonResponse({'error': '上传失败'})

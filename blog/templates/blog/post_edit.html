@@ -2,14 +2,79 @@
 
 <!-- 定义内容区块，用于在父模板中插入具体的内容 -->
 {% block content %}
-    <!-- 显示新建帖子的标题 -->
-    <h2>New post</h2>
-    <!-- 创建一个表单，用于提交新的帖子内容 -->
-    <!-- 使用POST方法提交表单数据，添加CSRF令牌以防止跨站请求伪造 -->
-    <form method="POST" class="post-form">{% csrf_token %}
-        <!-- 将表单字段以段落形式渲染，提高表单的可读性 -->
+    <!-- 表单用于提交文件和CSRF令牌，以保护表单提交的安全性 -->
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
         {{ form.as_p }}
-        <!-- 提交按钮，用于提交表单数据，保存新的帖子 -->
-        <button type="submit" class="save btn btn-secondary">Save</button>
+        <!-- 文件上传区域，通过拖放或选择文件进行上传 -->
+        <div id="drop-area">
+            <h3 class="drop-text">拖拽文件到此区域或点击上传</h3>
+            <!-- 隐藏的文件输入字段，用于非拖放上传 -->
+            <input type="file" id="fileElem" multiple accept="text/plain" onchange="handleFiles(this.files)">
+        </div>
+        <!-- 提交按钮，用于触发表单提交 -->
+        <button type="submit">提交</button>
     </form>
+
+    <!-- JavaScript 部分用于处理文件拖放和上传逻辑 -->
+    <script>
+        let dropArea = document.getElementById('drop-area')
+        
+        ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false)
+        })
+
+        /**
+        * 阻止默认的拖放行为，防止浏览器默认的文件预览或下载行为
+        * @param {Event} e - 拖放事件对象
+        */
+        function preventDefaults (e) {
+        e.preventDefault()
+        e.stopPropagation()
+        }
+
+        dropArea.addEventListener('drop', handleDrop, false)
+
+        /**
+        * 处理拖放的文件，将文件传递给处理函数
+        * @param {Event} e - 拖放事件对象，包含拖放的文件数据
+        */
+        function handleDrop(e) {
+        let dt = e.dataTransfer
+        let files = dt.files
+
+        handleFiles(files)
+        }
+
+        /**
+        * 处理所有选择的文件，对每个文件调用上传函数
+        * @param {FileList} files - 文件列表，来自输入字段或拖放操作
+        */
+        function handleFiles(files) {
+        files = [...files]
+        files.forEach(uploadFile)
+        }
+
+        /**
+        * 上传单个文件到服务器
+        * @param {File} file - 要上传的文件对象
+        */
+        function uploadFile(file) {
+        let url = '/upload/'
+        let formData = new FormData()
+        formData.append('file', file)
+
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+        .then(() => {
+            /* 成功处理文件上传 */
+        })
+        .catch(() => {
+            /* 错误处理 */
+        })
+        }
+    </script>
+
 {% endblock %}
