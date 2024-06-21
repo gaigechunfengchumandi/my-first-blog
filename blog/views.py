@@ -5,8 +5,14 @@ from django.shortcuts import render, get_object_or_404
 from .forms import PostForm
 from django.shortcuts import redirect
 from django.http import JsonResponse
-
-
+from .utils import denoise_file, analyze_file  # 假设你在utils.py中实现了这些函数
+import matplotlib.pyplot as plt
+import os
+from django.conf import settings
+from django.core.files.storage import default_storage
+import pdb
+import matplotlib
+matplotlib.use('Agg')  # 使用无窗口的 Agg 后端
 #
 def post_list(request):
     posts = Post.objects.all().order_by('created_date') #filter(published_date__lte=timezone.now()).order_by('published_date')
@@ -68,25 +74,67 @@ def post_new(request):
     return render(request, 'blog/post_edit.html', {'form': form})
 
 def post_edit(request, pk):
-
     post = get_object_or_404(Post, pk=pk)
+    
     if request.method == "POST":
-        form = PostForm(request.POST, instance=post)
+        print('Request method is POST')
+        form = PostForm(request.POST, request.FILES, instance=post)
         if form.is_valid():
+            print('Form is valid')
             post = form.save(commit=False)
-            post.author = request.user
-            post.published_date = timezone.now()
-            post.save()
+            print('Post saved:', post)
+
+            # 将图片路径保存到文章对象
+            post.image_path = txt_to_image(request,post)
+            # post.save()
+            print('Post updated with image path:', post.image_path)
+            
             return redirect('post_detail', pk=post.pk)
     else:
+        print('Request method is GET')
         form = PostForm(instance=post)
-    return render(request, 'blog/post_edit.html', {'form': form})
+    print('Rendering template with form and image_path:', post.image_path)
+    return render(request, 'blog/post_edit.html', {'form': form, 'image_path': post.image_path})
 
 
-def upload_file(request):
-    if request.method == 'POST' and request.FILES.get('file'):
-        file = request.FILES['file']
-        content = file.read().decode('utf-8')
-        # 这里可以对文件内容进行进一步处理，比如保存到数据库中
-        return JsonResponse({'message': '文件上传成功', 'content': content})
-    return JsonResponse({'error': '上传失败'})
+def txt_to_image(request,post):
+    # 处理上传的txt文件
+    uploaded_file = request.FILES.get('file')
+    # pdb.set_trace()
+    if uploaded_file and uploaded_file.name.endswith('.txt'):
+        print('Uploaded file:', uploaded_file.name)
+        # 保存上传的txt文件 
+        file_path = default_storage.save(os.path.join('uploads', uploaded_file.name), uploaded_file)
+        full_file_path = os.path.join(settings.MEDIA_ROOT, file_path)
+        
+        print('File saved to:', full_file_path)
+
+        # 读取txt文件内容并生成图片
+        with open(full_file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+        print('File content read')
+
+        # 按换行符分割数据并转换为浮点数列表
+        data_lines = content.strip().split('\n')
+        x_label = data_lines[0]
+        y_values = [float(value) for value in data_lines[1:]]
+
+        # 创建与y_values长度相同的x轴值序列
+        x_values = range(len(y_values))
+
+        # 绘制数据
+        plt.figure(figsize=(10, 5))
+        plt.plot(x_values, y_values, marker='o', linestyle='-', color='b')
+        plt.title('Line Plot from txt File')
+        plt.xlabel('Index')
+        plt.ylabel('Values')
+        plt.grid(True)
+
+        # 使用文件中的标签注释x轴
+        plt.xticks(ticks=x_values, labels=[x_label]*len(x_values), rotation=45)
+        # 保存图片
+        image_path = os.path.join('images', f'{post.pk}.png')
+        plt.savefig(os.path.join(settings.MEDIA_ROOT, image_path))
+        plt.close()
+        print('Image saved to:', image_path)
+    return image_path

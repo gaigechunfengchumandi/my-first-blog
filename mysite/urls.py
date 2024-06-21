@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+
 urlpatterns = [
     path("admin/", admin.site.urls), # 这一行意味着对于每个以 admin/ 开头的 URL，Django 都会找到相应的视图。
     path('', include('blog.urls')), #Django 现在将把所有进入“http://127.0.0.1:8000/”的东西重定向到 blog.urls 那里，并在那里寻找进一步的说明。

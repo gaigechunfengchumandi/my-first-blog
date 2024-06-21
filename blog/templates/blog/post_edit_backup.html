@@ -1,0 +1,69 @@
+{% extends 'blog/base.html' %}
+
+<!-- 定义内容区块，用于在父模板中插入具体的内容 -->
+{% block content %}
+<body>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div id="drop-area">
+            拖放文件到这里或点击上传
+            <input type="file" id="fileElem" multiple onchange="handleFiles(this.files)">
+        </div>
+        <button type="submit">提交</button>
+    </form>
+
+    <!-- JavaScript 部分用于处理文件拖放和上传逻辑 -->
+    <script>
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('fileElem');
+
+        // 防止默认行为 (阻止文件打开)
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        // 处理拖放文件
+        function handleDrop(e) {
+            let dt = e.dataTransfer;
+            let files = dt.files;
+
+            handleFiles(files);
+        }
+
+        // 处理所有选择的文件，对每个文件调用上传函数
+        function handleFiles(files) {
+            console.log(files, 'files');
+            files = [...files];
+            files.forEach(uploadFile);
+        }
+
+        // 上传单个文件到服务器
+        function uploadFile(file) {
+            let url = '/upload/';
+            let formData = new FormData();
+            formData.append('file', file);
+
+            fetch(url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(() => {
+                /* 成功处理文件上传 */
+                console.log('上传成功:', file.name);
+            })
+            .catch(() => {
+                /* 错误处理 */
+                console.error('上传失败:', file.name);
+            });
+        }
+    </script>
+
+{% endblock %}
