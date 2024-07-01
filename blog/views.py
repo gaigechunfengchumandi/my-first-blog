@@ -12,6 +12,12 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 import pdb
 import matplotlib
+import numpy as np
+from PIL import Image
+import io
+import json
+
+
 matplotlib.use('Agg')  # 使用无窗口的 Agg 后端
 #
 def post_list(request):
@@ -75,27 +81,35 @@ def post_new(request):
 
 def post_edit(request, pk):
     post = get_object_or_404(Post, pk=pk)
-    
+    context = {'array': None}  # 设置默认值为 None
+
     if request.method == "POST":
-        print('Request method is POST')
-        form = PostForm(request.POST, request.FILES, instance=post)
+        form = PostForm(request.POST, request.FILES, instance=post)# 建一个 PostForm 实例，并使用 request.POST 和 request.FILES 填充表单，
+        # 同时将 instance 参数设置为当前的 post 对象，这意味着表单会被用来更新这个对象。
         if form.is_valid():
-            print('Form is valid')
             post = form.save(commit=False)
-            print('Post saved:', post)
-
-            # 将图片路径保存到文章对象
-            post.image_path = txt_to_image(request,post)
-            # post.save()
-            print('Post updated with image path:', post.image_path)
-            
-            return redirect('post_detail', pk=post.pk)
+            # 获取上传的文件并处理
+            if request.FILES:
+                for file in request.FILES.values():
+                    array = signal_view(file)
+                    # array([-0.03850088, -0.0150717 , -0.0295201 , ..., -0.06095323,
+                    #  -0.07456392, -0.06976528])  len(array)=5000
+                    context['array'] = json.dumps(array.tolist())  # Convert numpy array to list and then to JSON 
+            #len(context['array']) 109732
+            #context['array'] = '[-0.02662004450434595, ..., -0.015029922710713755, -0.019825642521370618, -0.030692244922018736]'
+            post.save()
+            return render(request, 'blog/post_edit.html', {'form': form, 'array': context.get('array')})
     else:
-        print('Request method is GET')
         form = PostForm(instance=post)
-    print('Rendering template with form and image_path:', post.image_path)
-    return render(request, 'blog/post_edit.html', {'form': form, 'image_path': post.image_path})
+    return render(request, 'blog/post_edit.html', {'form':form, 'array': context.get('array')})# 使用 render 函数渲染模板 blog/post_edit.html，并将表单实例作为上下文传递。
 
+def signal_view(file):
+    # 读取文件内容并转换为 numpy 数组
+    file_content = file.read().decode('utf-8')  # 假设文件是 UTF-8 编码
+    lines = file_content.splitlines()
+    data =  [float(x) for x in lines]  
+    array = np.array(data)
+    return array
 
 def txt_to_image(request,post):
     # 处理上传的txt文件
@@ -136,5 +150,4 @@ def txt_to_image(request,post):
         image_path = os.path.join('images', f'{post.pk}.png')
         plt.savefig(os.path.join(settings.MEDIA_ROOT, image_path))
         plt.close()
-        print('Image saved to:', image_path)
     return image_path

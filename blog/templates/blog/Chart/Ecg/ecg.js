@@ -65,81 +65,102 @@ export default class Ecg extends EcgBase {
     }
     // 心电图算法
     drawLine(index) {
-        const ctx = this.ctx
-        let target = this.speed
-        let start = this.xPosition
+        // 获取绘图上下文
+        const ctx = this.ctx;
+        // 定义目标x位置，即本次绘制应该到达的x坐标
+        let target = this.speed;
+        // 定义起始x位置，即上次绘制结束的x坐标
+        let start = this.xPosition;
 
+        // 当目标位置大于0时，继续绘制
         while (target > 0) {
-            let y = this.yDefault
-            ctx.beginPath()
-            ctx.strokeStyle = 'grey'
-            ctx.lineWidth = this.lineWidth
+            // 默认的y坐标，如果没有数据则使用默认值
+            let y = this.yDefault;
+            // 开始一个新的路径
+            ctx.beginPath();
+            // 设置默认的线条颜色和宽度
+            ctx.strokeStyle = 'grey';
+            ctx.lineWidth = this.lineWidth;
+            // 如果有数据，则使用数据中的颜色和值
             if (this.data[index] && this.data[index].length > 0) {
-                y = this.data[index][0].value || this.data[index][0]
-                ctx.strokeStyle = this.data[index][0]?.color || this.color[index] || this.defaultColor
+                y = this.data[index][0].value || this.data[index][0];
+                ctx.strokeStyle = this.data[index][0]?.color || this.color[index] || this.defaultColor;
             }
-            const lastFlag = this.xPre[index] + this.cell >= this.xReal
-            const pStart = this.getPosition([this.xPre[index], this.computeY(this.yPre[index])], index)
+            // 判断是否到达了画布的最右侧
+            const lastFlag = this.xPre[index] + this.cell >= this.xReal;
+            // 计算上一个点的位置
+            const pStart = this.getPosition([this.xPre[index], this.computeY(this.yPre[index])], index);
+            // 如果已经到达或超过画布最右侧，进行特殊处理
             if (lastFlag && (start + target >= this.xReal)) {
-                const xOffset = this.xReal - start
-                const yOffset = (y - this.yPre[index]) * (this.xReal - this.xPre[index]) / this.cell
-                this.yPre[index] += yOffset
-                const p = this.getPosition([this.xReal, this.computeY(this.yPre[index])], index)
-                ctx.moveTo(pStart[0], pStart[1])
-                ctx.lineTo(...p)
-                const { bottom } = this.getOrigin(index)
-                target -= xOffset
-                this.over[index] = this.xReal - this.xPre[index]
-                start = 0
-                this.xPre[index] = 0
+                // 计算剩余距离和y方向上的偏移
+                const xOffset = this.xReal - start;
+                const yOffset = (y - this.yPre[index]) * (this.xReal - this.xPre[index]) / this.cell;
+                // 更新预存的y坐标
+                this.yPre[index] += yOffset;
+                // 计算终点位置
+                const p = this.getPosition([this.xReal, this.computeY(this.yPre[index])], index);
+                // 绘制从上一个点到当前点的线段
+                ctx.moveTo(pStart[0], pStart[1]);
+                ctx.lineTo(...p);
+                // 更新相关变量，为下一次绘制做准备
+                target -= xOffset;
+                this.over[index] = this.xReal - this.xPre[index];
+                start = 0;
+                this.xPre[index] = 0;
+                // 如果不分割线且未到达底部，则绘制白色线条作为强调
                 if (!this.divide && !bottom) {
-                    ctx.stroke()
-                    ctx.beginPath()
-                    ctx.strokeStyle = 'white'
-                    ctx.lineWidth = 1
-                    ctx.moveTo(p[0] - 1, p[1] - 5 * this.base * this.scale / 10)
-                    ctx.lineTo(p[0] - 1, p[1] + 5 * this.base * this.scale / 10)
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(p[0] - 1, p[1] - 5 * this.base * this.scale / 10);
+                    ctx.lineTo(p[0] - 1, p[1] + 5 * this.base * this.scale / 10);
                 }
             } else if (this.over[index] > 0) {
+                // 如果有过度绘制的线段
                 if (start + target < this.cell - this.over[index]) {
-                    start = start + target
-                    const yOffset = (y - this.yPre[index]) * start / (this.cell - this.over[index])
-                    start = start + target
-                    const p = this.getPosition([start, this.computeY(this.yPre[index] + yOffset)], index)
-                    ctx.moveTo(pStart[0], pStart[1])
-                    ctx.lineTo(...p)
-                    target = 0
+                    // 如果目标位置仍然在当前单元格内
+                    start = start + target;
+                    const yOffset = (y - this.yPre[index]) * start / (this.cell - this.over[index]);
+                    start = start + target;
+                    const p = this.getPosition([start, this.computeY(this.yPre[index] + yOffset)], index);
+                    ctx.moveTo(pStart[0], pStart[1]);
+                    ctx.lineTo(...p);
+                    target = 0;
                 } else {
-                    target -= this.cell - this.over[index]
-                    this.xPre[index] = start = this.cell
-                    this.yPre[index] = y
-                    const p = this.getPosition([start, this.computeY(this.yPre[index])], index)
-                    ctx.moveTo(pStart[0], pStart[1])
-                    ctx.lineTo(...p)
-                    this.data[index] && this.data[index].length > 0 && this.data[index].shift()
-                    this.over[index] = 0
+                    // 否则，更新位置并移除第一个数据点
+                    target -= this.cell - this.over[index];
+                    this.xPre[index] = start = this.cell;
+                    this.yPre[index] = y;
+                    const p = this.getPosition([start, this.computeY(this.yPre[index])], index);
+                    ctx.moveTo(pStart[0], pStart[1]);
+                    ctx.lineTo(...p);
+                    this.data[index] && this.data[index].length > 0 && this.data[index].shift();
+                    this.over[index] = 0;
                 }
-            }
-            else if (start + target < this.xPre[index] + this.cell) {
-                const yOffset = (start + target - this.xPre[index]) * (y - this.yPre[index]) / this.cell
-                start = start + target
-                const p = this.getPosition([start, this.computeY(this.yPre[index] + yOffset)], index)
-                ctx.moveTo(pStart[0], pStart[1])
-                ctx.lineTo(...p)
-                target = 0
+            } else if (start + target < this.xPre[index] + this.cell) {
+                // 如果起始位置加上目标位置仍然在当前单元格内
+                const yOffset = (start + target - this.xPre[index]) * (y - this.yPre[index]) / this.cell;
+                start = start + target;
+                const p = this.getPosition([start, this.computeY(this.yPre[index] + yOffset)], index);
+                ctx.moveTo(pStart[0], pStart[1]);
+                ctx.lineTo(...p);
+                target = 0;
             } else {
-                const xOffset = this.xPre[index] + this.cell - start
-                start = this.xPre[index] + this.cell
-                this.yPre[index] = y
-                const p = this.getPosition([start, this.computeY(this.yPre[index])], index)
-                ctx.moveTo(pStart[0], pStart[1])
-                ctx.lineTo(...p)
-                target -= xOffset
-                this.xPre[index] = start >= this.xReal ? 0 : this.xPre[index] + this.cell
-                start = start >= this.xReal ? 0 : start
-                this.data[index] && this.data[index].length > 0 && this.data[index].shift()
+                // 否则，更新位置并准备下一个单元格的绘制
+                const xOffset = this.xPre[index] + this.cell - start;
+                start = this.xPre[index] + this.cell;
+                this.yPre[index] = y;
+                const p = this.getPosition([start, this.computeY(this.yPre[index])], index);
+                ctx.moveTo(pStart[0], pStart[1]);
+                ctx.lineTo(...p);
+                target -= xOffset;
+                this.xPre[index] = start >= this.xReal ? 0 : this.xPre[index] + this.cell;
+                start = start >= this.xReal ? 0 : start;
+                this.data[index] && this.data[index].length > 0 && this.data[index].shift();
             }
-            ctx.stroke()
+            // 绘制当前路径
+            ctx.stroke();
         }
     }
     getPosition(val, index) {

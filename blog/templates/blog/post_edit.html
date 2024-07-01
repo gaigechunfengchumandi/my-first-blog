@@ -1,111 +1,49 @@
+
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <title>Webpage Layout</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            display: flex;
-            flex-wrap: wrap;
-            width: 100%;
-            border: 1px dashed #000;
-        }
-        .left, .right {
-            padding: 10px;
-        }
-        .left {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-        }
-        .right {
-            flex: 1;
-            border-left: 1px dashed #000;
-            display: flex;
-            flex-direction: column;
-        }
-        /* 定义一个块级元素的样式 */
-        .block {
-            /* 设置元素边框为1像素的黑色实线 */
-            border: 1px solid #000;
-            /* 设置元素底部外边距为10像素，用于分隔多个块级元素 */
-            margin-bottom: 10px;
-            /* 设置元素内部填充为10像素，提供内容与边界的间距 */
-            padding: 10px;
-            /* 允许元素在容器中灵活伸缩，占据可用空间 */
-            flex: 1;
-            /* 防止元素内容溢出，添加滚动条以便查看全部内容 */
-            overflow: auto;
-        }        
-        .block1 {
-            /* 设置元素边框为1像素的黑色实线 */
-            border: 1px solid #000;
-            /* 设置元素底部外边距为10像素，用于分隔多个块级元素 */
-            margin-bottom: 10px;
-            /* 设置元素内部填充为10像素，提供内容与边界的间距 */
-            padding: 20px;
-            /* 允许元素在容器中灵活伸缩，占据可用空间 */
-            flex: 0;
-            /* 防止元素内容溢出，添加滚动条以便查看全部内容 */
-            overflow: auto;
-        }
-        .block h3 {
-            margin: 0 0 10px;
-        }
-        .table-container {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid #000;
-            text-align: center;
-            padding: 5px;
-        }
-        .chart {
-            border: 1px solid #000;
-            height: 200px;
-            margin-bottom: 10px;
-        }
-        .diagnosis {
-            border: 1px solid #000;
-            padding: 10px;
-            flex: 1;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/edit.css' %}">
+
 </head>
 <body>
     <div class="container">
         <div class="left">
-            <div class="block">
+            <div class="block1">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     {{ form.as_p }}
                     <button type="submit">提交</button>
                 </form>
+                {% if array %}
+                    <p>文件已上传</p>
+                    <script>
+                        window.beatArray = {{ array|safe }};
+                    </script>
+                {% else %}
+                    <p>文件未选取</p>
+                {% endif %}
+
             </div>
-            <div class="block">
+            <div class="block2">
                 <h3>信号去噪</h3>
                 <div>去噪前</div>
-                {% if image_path %}
-                    <!-- <img src="{{ image_path.url }}" alt="Generated Image"> -->
-                    <!-- <img src="/media/images/1.png" alt="Generated Image"> -->
-                    <canvas id="canvas" width="500" height="500"></canvas>
-                {% endif %}
+                <div class="heartBeat">
+                    <button id="showGrid" onclick="showGrid()">网格(开)</button>
+                    <button id="multiple" onclick="multiple()">增益(10)</button>
+                    时间：<input type="range" id="timeRange" min="0" max="100" value="0" step="1" />
+                    <span id="time">0</span> 秒
+                    <canvas id="heartBeat" width="750px" height="750px"></canvas>
+                    <span id="mouseTip"></span>
+                    <script src="{% static 'js/heartbeat.js' %}" defer></script>
+                </div>
                 <div>去噪后</div>
-                <!-- 将上传的文件经过python函数1处理后显示在页面上 -->
             </div>
-            <div class="block">
+            <div class="block3">
                 <h3>分析诊断</h3>
                 <!-- 将上传的文件经过python函数2处理后显示在页面上 -->
             </div>
@@ -169,41 +107,8 @@
             </div>
         </div>
     </div>
-    <script>
-        /**
-         * 加载文件并显示其内容。
-         * 此函数用于处理用户选择的文件，通过文件阅读器（FileReader）读取文件内容，并将其显示在页面上指定的元素中。
-         * 它不接受任何参数，也没有返回值，但通过改变页面元素的内容来实现其功能。
-         */
-        function loadFile() {
-            // 获取用户选择的文件输入元素
-            const fileInput = document.getElementById('fileInput');
-            // 获取用于显示文件内容的元素
-            const fileContent = document.getElementById('fileContent');
-            // 获取用户选择的首个文件
-            const file = fileInput.files[0];
-            // 创建一个新的文件阅读器实例
-            const reader = new FileReader();
-            
-            // 定义文件加载完成后的处理逻辑
-            reader.onload = function(e) {
-                // 将文件内容显示在页面上
-                fileContent.textContent = e.target.result;
-            };
-            // 以文本形式读取文件内容
-            reader.readAsText(file);
-        }
-        function drawChart() {
-             // 获取用于显示图表的元素
-             const chart = document.getElementById('canvas');
-            // 创建一个新的Canvas实例
-            const ctx = chart.getContext('2d');
-            // 绘制一个矩形作为图表
-            ctx.fillRect(0, 0, chart.width, chart.height);
-        }
-        window.onload = function() {
-            drawChart()
-        };
-    </script>
+
 </body>
 </html>
+
+

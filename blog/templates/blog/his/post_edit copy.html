@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <script src = "https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script> -->
+    <!-- <script src = "Chart/Ecg/ecg.js"></script> -->
+    <title>Webpage Layout</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            width: 100%;
+            border: 1px dashed #000;
+        }
+        .left, .right {
+            padding: 10px;
+        }
+        .left {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+        }
+        .right {
+            flex: 1;
+            border-left: 1px dashed #000;
+            display: flex;
+            flex-direction: column;
+        }
+        /* 定义一个块级元素的样式 */
+        .block {
+            /* 设置元素边框为1像素的黑色实线 */
+            border: 1px solid #000;
+            /* 设置元素底部外边距为10像素，用于分隔多个块级元素 */
+            margin-bottom: 10px;
+            /* 设置元素内部填充为10像素，提供内容与边界的间距 */
+            padding: 10px;
+            /* 允许元素在容器中灵活伸缩，占据可用空间 */
+            flex: 1;
+            /* 防止元素内容溢出，添加滚动条以便查看全部内容 */
+            overflow: auto;
+        }        
+        .block1 {
+            /* 设置元素边框为1像素的黑色实线 */
+            border: 1px solid #000;
+            /* 设置元素底部外边距为10像素，用于分隔多个块级元素 */
+            margin-bottom: 10px;
+            /* 设置元素内部填充为10像素，提供内容与边界的间距 */
+            padding: 20px;
+            /* 允许元素在容器中灵活伸缩，占据可用空间 */
+            flex: 0;
+            /* 防止元素内容溢出，添加滚动条以便查看全部内容 */
+            overflow: auto;
+        }
+        .block h3 {
+            margin: 0 0 10px;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #000;
+            text-align: center;
+            padding: 5px;
+        }
+        .chart {
+            border: 1px solid #000;
+            height: 200px;
+            margin-bottom: 10px;
+        }
+        .diagnosis {
+            border: 1px solid #000;
+            padding: 10px;
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left">
+            <div class="block">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit">提交</button>
+                </form>
+            </div>
+            <div class="block">
+                <h3>信号去噪</h3>
+                <div>去噪前</div>
+                {% if array %}
+                    <!-- <img src="/media/images/1.png" alt="Generated Image"> -->
+                    <canvas id="dataCanvas"></canvas>
+                    <script type="application/json" id="array-data">
+                        {{ array|json_script:"array-data" }}
+                    </script>
+                    <script>
+                        // 1. 从脚本标签中获取数组数据
+                        const array = JSON.parse(document.getElementById('array-data').textContent);
+                        // 2. 获取canvas元素
+                        const canvas = document.getElementById('dataCanvas');
+                        const ctx = canvas.getContext('2d');
+            
+                        // 3. 假设数组是二维数组
+                        const rows = array.length;
+                        const cols = array[0].length;
+            
+                        // 4. 设置canvas的大小
+                        canvas.width = cols;
+                        canvas.height = rows;
+            
+                        // 5. 创建ImageData对象来保存图像数据
+                        const imageData = ctx.createImageData(cols, rows);
+                        // 6. 遍历数组并将数据填充到ImageData对象中
+                        for (let y = 0; y < rows; y++) {
+                            for (let x = 0; x < cols; x++) {
+                                const value = array[y][x];// 获取当前像素值
+                                const index = (y * cols + x) * 4;// 计算在ImageData.data中的索引
+
+                                // 填充像素数据（假设值在0-255范围内，表示灰度）
+                                imageData.data[index] = value;        // R
+                                imageData.data[index + 1] = value;    // G
+                                imageData.data[index + 2] = value;    // B
+                                imageData.data[index + 3] = 255;      // A
+                            }
+                        }
+                        // 7. 将ImageData对象绘制到canvas上
+                        ctx.putImageData(imageData, 0, 0);
+                    </script>
+                {% endif %}
+                <div>去噪后</div>
+                <!-- 将上传的文件经过python函数1处理后显示在页面上 -->
+            </div>
+            <div class="block">
+                <h3>分析诊断</h3>
+                <!-- 将上传的文件经过python函数2处理后显示在页面上 -->
+            </div>
+        </div>
+        <div class="right">
+            <div class="block">
+                <h3>参数</h3>
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>参数</th>
+                            <th>I</th>
+                            <th>II</th>
+                            <th>V1</th>
+                            <th>...</th>
+                            <th>V6</th>
+                        </tr>
+                        <tr>
+                            <td>QRS</td>
+                            <td>----</td>
+                            <td>----</td>
+                            <td>----</td>
+                            <td>----</td>
+                            <td>----</td>
+                        </tr>
+                        <tr>
+                            <td>RR间期</td>
+                            <td>----</td>
+                            <td>----</td>
+                            <td>----</td>
+                            <td>----</td>
+                            <td>----</td>
+                        </tr>
+                        <tr>
+                            <td>PR间期</td>
+                            <td>----</td>
+                            <td>----</td>
+                            <td>----</td>
+                            <td>----</td>
+                            <td>----</td>
+                        </tr>
+                        <tr>
+                            <td>ST间期</td>
+                            <td>----</td>
+                            <td>----</td>
+                            <td>----</td>
+                            <td>----</td>
+                            <td>----</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="chart">
+                    <!-- Placeholder for chart -->
+                    <h3>参数变化</h3>
+                </div>
+            </div>
+            <div class="diagnosis">
+                <h3>诊断</h3>
+                <p>1. 窦性心动过缓;</p>
+                <p>2. 左心室肥厚</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+
+
