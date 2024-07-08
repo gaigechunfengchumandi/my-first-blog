@@ -79,9 +79,12 @@ def post_new(request):
     # 渲染表单页面
     return render(request, 'blog/post_edit.html', {'form': form})
 
+
+# 1小时的数据
+# 比例尺要对，时间，幅值
 def post_edit(request, pk):
     post = get_object_or_404(Post, pk=pk)
-    context = {'array': None}  # 设置默认值为 None
+    context = {}  # 设置默认值为 None
 
     if request.method == "POST":
         form = PostForm(request.POST, request.FILES, instance=post)# 建一个 PostForm 实例，并使用 request.POST 和 request.FILES 填充表单，
@@ -91,19 +94,16 @@ def post_edit(request, pk):
             # 获取上传的文件并处理
             if request.FILES:
                 for file in request.FILES.values():
-                    array = signal_view(file)
-                    # array([-0.03850088, -0.0150717 , -0.0295201 , ..., -0.06095323,
-                    #  -0.07456392, -0.06976528])  len(array)=5000
+                    array,array_denoise = signal_view_12(file)
                     context['array'] = json.dumps(array.tolist())  # Convert numpy array to list and then to JSON 
-            #len(context['array']) 109732
-            #context['array'] = '[-0.02662004450434595, ..., -0.015029922710713755, -0.019825642521370618, -0.030692244922018736]'
+                    context['array_denoise'] = json.dumps(array_denoise.tolist())
             post.save()
-            return render(request, 'blog/post_edit.html', {'form': form, 'array': context.get('array')})
+            return render(request, 'blog/post_edit.html', {'form': form, 'array': context.get('array'), 'array_denoise': context.get('array_denoise')})
     else:
         form = PostForm(instance=post)
-    return render(request, 'blog/post_edit.html', {'form':form, 'array': context.get('array')})# 使用 render 函数渲染模板 blog/post_edit.html，并将表单实例作为上下文传递。
+    return render(request, 'blog/post_edit.html', {'form':form})# 使用 render 函数渲染模板 blog/post_edit.html，并将表单实例作为上下文传递。
 
-def signal_view(file):
+def signal_view_1(file):
     # 读取文件内容并转换为 numpy 数组
     file_content = file.read().decode('utf-8')  # 假设文件是 UTF-8 编码
     lines = file_content.splitlines()
@@ -111,7 +111,50 @@ def signal_view(file):
     array = np.array(data)
     return array
 
+def signal_view_12(file):
+    # 读取文件内容并转换为 numpy 数组
+    file_content = file.read().decode('utf-8')  # 假设文件是 UTF-8 编码
+    lines = file_content.splitlines()  # len() = 1280
+    data = []
+    for line in lines:
+        values = line.split()  # 按空格拆分每行的数值
+        data.extend([float(x) for x in values])
+    
+    # 确保 data 的长度为 15360,122880
+    # if len(data) != 8340480:
+    #     raise ValueError(f"Data length is not 8340480: {len(data)}")
+
+    row = int(len(data)/12)
+    array = np.array(data).reshape(row, 12).T
+
+    # 降噪函数调用
+    array_denose = signal_denoise(data)
+
+    return array, array_denose
+
+# 降噪函数
+def signal_denoise(data):
+    # 对data里的所有数据求均值方差
+    mean = np.mean(data)
+    std = np.std(data)
+    # 数据标准化处理
+    data = [(x - mean) / std for x in data]
+
+    row = int(len(data)/12)
+    # 将 data 转换为形状为 (1280, 12) 的二维数组，并转置为 (12, 1280)
+    array = np.array(data).reshape(row, 12).T
+
+    return array
+
+
+
+
+
+
+
+
 def txt_to_image(request,post):
+
     # 处理上传的txt文件
     uploaded_file = request.FILES.get('file')
     # pdb.set_trace()

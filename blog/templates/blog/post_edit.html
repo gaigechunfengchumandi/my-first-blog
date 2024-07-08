@@ -23,6 +23,7 @@
                     <p>文件已上传</p>
                     <script>
                         window.beatArray = {{ array|safe }};
+                        window.beatArray_denoise = {{ array_denoise|safe }};
                     </script>
                 {% else %}
                     <p>文件未选取</p>
@@ -31,17 +32,15 @@
             </div>
             <div class="block2">
                 <h3>信号去噪</h3>
-                <div>去噪前</div>
                 <div class="heartBeat">
-                    <button id="showGrid" onclick="showGrid()">网格(开)</button>
-                    <button id="multiple" onclick="multiple()">增益(10)</button>
-                    时间：<input type="range" id="timeRange" min="0" max="100" value="0" step="1" />
+                    <div>去噪前</div>
+                    时间：<input type="range" id="timeRange" min="0" max="1000" value="0" step="1" />
                     <span id="time">0</span> 秒
-                    <canvas id="heartBeat" width="750px" height="750px"></canvas>
-                    <span id="mouseTip"></span>
-                    <script src="{% static 'js/heartbeat.js' %}" defer></script>
+                    <canvas id="beforeDenoise" width="1126px" height="770px"></canvas>
+                
+                    <div>去噪后</div>
+                    <canvas id="afterDenoise" width="1126px" height="750px"></canvas>
                 </div>
-                <div>去噪后</div>
             </div>
             <div class="block3">
                 <h3>分析诊断</h3>
@@ -108,6 +107,7 @@
         </div>
     </div>
 
+    <script src="{% static 'js/heartbeat.js' %}" defer></script>
 </body>
 </html>
 

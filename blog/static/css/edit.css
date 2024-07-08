@@ -20,6 +20,7 @@ body {
     flex-wrap: wrap;
     width: 100%;
     border: 1px dashed #000;
+    align-items: stretch; /* 使子元素高度与容器一样高 */
 }
 .left, .right {
     padding: 10px;
@@ -56,11 +57,9 @@ body {
     margin-bottom: 10px;
     /* 设置元素内部填充为10像素，提供内容与边界的间距 */
     padding: 10px;
-    /* 允许元素在容器中灵活伸缩，占据可用空间 */
-    /* flex: 1; */
     /* 防止元素内容溢出，添加滚动条以便查看全部内容 */
     overflow: auto;
-    height: 300px; /* 假设默认高度是 200px */
+    height: 1000px; /* 假设默认高度是 200px */
 }   
 .block3 {
     /* 设置元素边框为1像素的黑色实线 */
@@ -69,11 +68,10 @@ body {
     margin-bottom: 10px;
     /* 设置元素内部填充为10像素，提供内容与边界的间距 */
     padding: 10px;
-    /* 允许元素在容器中灵活伸缩，占据可用空间 */
-    /* flex: 1; */
     /* 防止元素内容溢出，添加滚动条以便查看全部内容 */
     overflow: auto;
-    height: 300px; /* 假设默认高度是 200px */
+    height: 200px; /* 假设默认高度是 200px */
+    flex-grow: 1; /* 使block2在容器内扩展以填充可用空间 */
 }    
 .block {
     /* 设置元素边框为1像素的黑色实线 */
