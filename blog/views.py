@@ -82,12 +82,10 @@ def post_new(request):
     return render(request, 'blog/post_edit.html', {'form': form})
 
 
-# 1小时的数据
-# 比例尺要对，时间，幅值
 def post_edit(request, pk):
     post = get_object_or_404(Post, pk=pk)
     context = {}  # 设置默认值为 None
-    initialize_variable()
+    initialize_variable()# 降噪函数的初始化方法
     if request.method == "POST":
         form = PostForm(request.POST, request.FILES, instance=post)# 建一个 PostForm 实例，并使用 request.POST 和 request.FILES 填充表单，
         # 同时将 instance 参数设置为当前的 post 对象，这意味着表单会被用来更新这个对象。
@@ -103,7 +101,8 @@ def post_edit(request, pk):
             return render(request, 'blog/post_edit.html', {'form': form, 'array': context.get('array'), 'array_denoise': context.get('array_denoise')})
     else:
         form = PostForm(instance=post)
-    return render(request, 'blog/post_edit.html', {'form':form})# 使用 render 函数渲染模板 blog/post_edit.html，并将表单实例作为上下文传递。
+    return render(request, 'blog/post_edit.html', {'form':form})
+
 
 def signal_view_1(file):
     # 读取文件内容并转换为 numpy 数组
