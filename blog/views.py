@@ -17,6 +17,8 @@ from PIL import Image
 import io
 import json
 
+from .denoise128hz.Test_Holter_128hz_8lead_denoise_openvino import initialize_variable, predict_ecg_data
+
 
 matplotlib.use('Agg')  # 使用无窗口的 Agg 后端
 #
@@ -85,7 +87,7 @@ def post_new(request):
 def post_edit(request, pk):
     post = get_object_or_404(Post, pk=pk)
     context = {}  # 设置默认值为 None
-
+    initialize_variable()
     if request.method == "POST":
         form = PostForm(request.POST, request.FILES, instance=post)# 建一个 PostForm 实例，并使用 request.POST 和 request.FILES 填充表单，
         # 同时将 instance 参数设置为当前的 post 对象，这意味着表单会被用来更新这个对象。
@@ -120,10 +122,7 @@ def signal_view_12(file):
         values = line.split()  # 按空格拆分每行的数值
         data.extend([float(x) for x in values])
     
-    # 确保 data 的长度为 15360,122880
-    # if len(data) != 8340480:
-    #     raise ValueError(f"Data length is not 8340480: {len(data)}")
-
+    
     row = int(len(data)/12)
     array = np.array(data).reshape(row, 12).T
 
@@ -135,14 +134,18 @@ def signal_view_12(file):
 # 降噪函数
 def signal_denoise(data):
     # 对data里的所有数据求均值方差
-    mean = np.mean(data)
-    std = np.std(data)
-    # 数据标准化处理
-    data = [(x - mean) / std for x in data]
+    # mean = np.mean(data)
+    # std = np.std(data)
+    # # 数据标准化处理
+    # data = [(x - mean) / std for x in data]
 
     row = int(len(data)/12)
-    # 将 data 转换为形状为 (1280, 12) 的二维数组，并转置为 (12, 1280)
-    array = np.array(data).reshape(row, 12).T
+    # 将 data 转换为形状为 (1280, 12) 的二维数组，不转置为 (12, 1280)
+    array = np.array(data).reshape(row, 12)
+    print("before enter denoise function")
+    array = predict_ecg_data(array, 128)
+    print("denoise function finish")
+    array = array.T # 转置为 (12, 1280)
 
     return array
 
@@ -152,7 +155,7 @@ def signal_denoise(data):
 
 
 
-
+# region abandon
 def txt_to_image(request,post):
 
     # 处理上传的txt文件
@@ -194,3 +197,4 @@ def txt_to_image(request,post):
         plt.savefig(os.path.join(settings.MEDIA_ROOT, image_path))
         plt.close()
     return image_path
+# endregion

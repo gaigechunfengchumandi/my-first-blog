@@ -14,7 +14,7 @@ var show = true; //定义网格显示隐藏变量
 var mulNum = 1; //定义增益变量
 var i = 1; //定义判断值变量
 var canvas_width = 1326;
-var canvas_hight = 751;
+var canvas_hight = 1300;
 
 
 
@@ -107,15 +107,24 @@ function drawBigGrid(canvas) {
 /**绘制心电图线 */
 function drawLine_12(canvas,beatArray) {// 定义一个名为 drawLine 的函数，接受一个参数 c_canvas，代表 HTML 中的 <canvas> 元素。
   hb = canvas.getContext("2d");//使用 getContext("2d") 方法获取绘图上下文，该上下文用于在画布上绘制图形。这里，hb 是一个用于绘制二维图形的 CanvasRenderingContext2D 对象。
-  hb.strokeStyle = "#0f0";//设置绘制线条的颜色为绿色（十六进制颜色代码为 #0f0）。
+  hb.strokeStyle = "#000000";//设置绘制线条的颜色为绿色（十六进制颜色代码为 #0f0）。
   hb.lineWidth = 2;//设置绘制线条的宽度为2个像素。
   
-  const lineHeight = 100; // 每行的高度
+  hb.font = "16px Arial"; // 设置字体样式和大小为20px
+  hb.fillStyle = "#000000"; // 设置文本颜色为黑色
+  // 12个标准心电导联的名称
+  const leadNames = ["I", "II", "III", "aVR", "aVL", "aVF", "V1", "V2", "V3", "V4", "V5", "V6"];
+
+  const lineHeight = 110; // 每行的高度
   const startX = 10; // 起始X坐标
 
   // 绘制每一行心电图
   beatArray.forEach((beatLine, lineIndex) => {
     let startY = 30 + lineIndex * lineHeight; // 计算每一行的起始Y坐标
+    // 绘制心电导联名称
+    hb.fillText(leadNames[lineIndex], startX, startY - 10);
+    
+
     hb.beginPath();//开始一个新的路径。在调用 beginPath 之后绘制的图形会构成一条路径。
     let beatLine_2 = beatLine.map((value, index) => [index, value]);//把横坐标加上
     beatLine_2.forEach(a => {//遍历 beatLine 数组中的每个元素 a。假设 beatLine 是一个二维数组，每个元素 a 是一个包含两个值的数组。
