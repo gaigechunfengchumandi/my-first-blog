@@ -15,6 +15,9 @@
         <div class="left">
             <div class="block1">
                 <script>
+                    function changeFile(){
+                        console.log(99999);
+                    }
                     // 监听文档内容加载完成事件
                     document.addEventListener("DOMContentLoaded", function() {
                         // 获取页面上的文件输入元素
@@ -29,7 +32,7 @@
                         });
                     });
                 </script>
-                <form method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data" onchange="changeFile">
                     {% csrf_token %}
                     {{ form.as_p }}
                 </form>
@@ -38,6 +41,7 @@
                     <script>
                         window.beatArray = {{ array|safe }};
                         window.beatArrayDenoise = {{ array_denoise|safe }};
+                        window.beatArraySeg = {{ array_segment|safe }};
                     </script>
                 {% else %}
                     <p>文件未选取</p>
@@ -47,7 +51,7 @@
             <div class="block2">
                 <h3>信号去噪</h3>
                 <div class="heartBeat">
-                    <div>去噪前</div>
+                    <div>对比图</div>
                     时间：<input type="range" id="timeRange" min="0" max="10" value="0" step="1" />
                     <span id="time">0</span> 秒
                     <canvas id="Denoise_contrast" width="1326px" height="2400px"></canvas>
@@ -56,6 +60,7 @@
             <div class="block3">
                 <h3>分析诊断</h3>
                 <!-- 将上传的文件经过python函数2处理后显示在页面上 -->
+                <canvas id="segment" width="1326px" height="400px"></canvas>
             </div>
         </div>
         <div class="right">

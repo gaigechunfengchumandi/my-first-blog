@@ -18,6 +18,7 @@ import io
 import json
 
 from .denoise128hz.Test_Holter_128hz_8lead_denoise_openvino import initialize_variable, predict_ecg_data
+from .segment500hz.segment_500hz_openvino import initialize_variable_s,segment_2s
 
 
 matplotlib.use('Agg')  # 使用无窗口的 Agg 后端
@@ -84,24 +85,27 @@ def post_new(request):
 
 def post_edit(request, pk):
     post = get_object_or_404(Post, pk=pk)
-    context = {}  # 设置默认值为 None
+    context = {}  # 初始化一个空字典，将在后续用来存储模板上下文数据。
     initialize_variable()# 降噪函数的初始化方法
+    initialize_variable_s() # 分割函数的初始化方法
     if request.method == "POST":
-        form = PostForm(request.POST, request.FILES, instance=post)# 建一个 PostForm 实例，并使用 request.POST 和 request.FILES 填充表单，
+        form = PostForm(request.POST, request.FILES, instance=post)# 创建一个 PostForm 表单实例，用 request.POST 和 request.FILES 填充，同时指定要更新的实例 post。
         # 同时将 instance 参数设置为当前的 post 对象，这意味着表单会被用来更新这个对象。
         if form.is_valid():
-            post = form.save(commit=False)
-            # 获取上传的文件并处理
-            if request.FILES:
-                for file in request.FILES.values():
-                    array,array_denoise = signal_view_12(file)
-                    context['array'] = json.dumps(array.tolist())  # Convert numpy array to list and then to JSON 
-                    context['array_denoise'] = json.dumps(array_denoise.tolist())
-            post.save()
-            return render(request, 'blog/post_edit.html', {'form': form, 'array': context.get('array'), 'array_denoise': context.get('array_denoise')})
-    else:
-        form = PostForm(instance=post)
-    return render(request, 'blog/post_edit.html', {'form':form})
+            post = form.save(commit=False)# 保存表单数据到 post 对象，但不提交到数据库。
+            if request.FILES: # 检查是否有文件上传。
+                for file in request.FILES.values():# 遍历所有上传的文件。
+                    array,array_denoise = signal_view_12(file) # 调用 signal_view_12 函数处理文件，返回两个数组。array是降噪前的，array_denoise是降噪后的
+                    array_segment = segment_2s(array_denoise)
+                    context['array'] = json.dumps(array.tolist())  # 将 numpy 数组转换为列表，然后转换为 JSON 字符串，并存储在 context 字典中。
+                    context['array_denoise'] = json.dumps(array_denoise.tolist())# 同样地处理降噪后的数组。
+                    context['array_segment'] = json.dumps(array_segment.tolist())
+            post.save()#保存 post 对象到数据库。
+            # 渲染模板并返回响应，将表单和数组数据传递给模板。
+            return render(request, 'blog/post_edit.html', {'form': form, 'array': context.get('array'), 'array_denoise': context.get('array_denoise'),'array_segment': context.get('array_segment')})
+    else: #处理非 POST 请求（即 GET 请求）。
+        form = PostForm(instance=post)# 创建一个 PostForm 表单实例，使用 post 对象填充表单
+    return render(request, 'blog/post_edit.html', {'form':form})# 渲染模板并返回响应，只传递表单数据给模板。
 
 
 def signal_view_1(file):
@@ -155,45 +159,45 @@ def signal_denoise(data):
 
 
 # region abandon
-def txt_to_image(request,post):
+# def txt_to_image(request,post):
 
-    # 处理上传的txt文件
-    uploaded_file = request.FILES.get('file')
-    # pdb.set_trace()
-    if uploaded_file and uploaded_file.name.endswith('.txt'):
-        print('Uploaded file:', uploaded_file.name)
-        # 保存上传的txt文件 
-        file_path = default_storage.save(os.path.join('uploads', uploaded_file.name), uploaded_file)
-        full_file_path = os.path.join(settings.MEDIA_ROOT, file_path)
+#     # 处理上传的txt文件
+#     uploaded_file = request.FILES.get('file')
+#     # pdb.set_trace()
+#     if uploaded_file and uploaded_file.name.endswith('.txt'):
+#         print('Uploaded file:', uploaded_file.name)
+#         # 保存上传的txt文件 
+#         file_path = default_storage.save(os.path.join('uploads', uploaded_file.name), uploaded_file)
+#         full_file_path = os.path.join(settings.MEDIA_ROOT, file_path)
         
-        print('File saved to:', full_file_path)
+#         print('File saved to:', full_file_path)
 
-        # 读取txt文件内容并生成图片
-        with open(full_file_path, 'r', encoding='utf-8') as file:
-            content = file.read()
-        print('File content read')
+#         # 读取txt文件内容并生成图片
+#         with open(full_file_path, 'r', encoding='utf-8') as file:
+#             content = file.read()
+#         print('File content read')
 
-        # 按换行符分割数据并转换为浮点数列表
-        data_lines = content.strip().split('\n')
-        x_label = data_lines[0]
-        y_values = [float(value) for value in data_lines[1:]]
+#         # 按换行符分割数据并转换为浮点数列表
+#         data_lines = content.strip().split('\n')
+#         x_label = data_lines[0]
+#         y_values = [float(value) for value in data_lines[1:]]
 
-        # 创建与y_values长度相同的x轴值序列
-        x_values = range(len(y_values))
+#         # 创建与y_values长度相同的x轴值序列
+#         x_values = range(len(y_values))
 
-        # 绘制数据
-        plt.figure(figsize=(10, 5))
-        plt.plot(x_values, y_values, marker='o', linestyle='-', color='b')
-        plt.title('Line Plot from txt File')
-        plt.xlabel('Index')
-        plt.ylabel('Values')
-        plt.grid(True)
+#         # 绘制数据
+#         plt.figure(figsize=(10, 5))
+#         plt.plot(x_values, y_values, marker='o', linestyle='-', color='b')
+#         plt.title('Line Plot from txt File')
+#         plt.xlabel('Index')
+#         plt.ylabel('Values')
+#         plt.grid(True)
 
-        # 使用文件中的标签注释x轴
-        plt.xticks(ticks=x_values, labels=[x_label]*len(x_values), rotation=45)
-        # 保存图片
-        image_path = os.path.join('images', f'{post.pk}.png')
-        plt.savefig(os.path.join(settings.MEDIA_ROOT, image_path))
-        plt.close()
-    return image_path
+#         # 使用文件中的标签注释x轴
+#         plt.xticks(ticks=x_values, labels=[x_label]*len(x_values), rotation=45)
+#         # 保存图片
+#         image_path = os.path.join('images', f'{post.pk}.png')
+#         plt.savefig(os.path.join(settings.MEDIA_ROOT, image_path))
+#         plt.close()
+#     return image_path
 # endregion

@@ -10,12 +10,10 @@ document.addEventListener('DOMContentLoaded', function() {
 // #endregion
 
 // #region global variables
-var c_canvas = document.getElementById("Denoise_contrast");
-var show = true; //定义网格显示隐藏变量
-var mulNum = 1; //定义增益变量
-var i = 1; //定义判断值变量
-var canvas_width = 1326;
-var canvas_hight = 2400;
+var c_canvas = document.getElementById("Denoise_contrast");//定义降噪画布
+var s_canvas = document.getElementById("segment");//定义分割画布
+var c_canvas_width = 1326;//定义降噪画布宽度
+var c_canvas_hight = 2400;//定义降噪画布高度
 var range = 0; //定义初始时间
 // #endregion
 
@@ -44,14 +42,14 @@ function drawSmallGrid(canvas) {
     ctx.strokeStyle = "#f1dedf";
     ctx.strokeWidth = 1;
     ctx.beginPath();
-    for (var x = 0.5; x < canvas_width; x += 3) {
+    for (var x = 0.5; x < c_canvas_width; x += 3) {
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas_hight);
+      ctx.lineTo(x, c_canvas_hight);
       ctx.stroke();
     }
-    for (var y = 0.5; y < canvas_hight; y += 3) {
+    for (var y = 0.5; y < c_canvas_hight; y += 3) {
       ctx.moveTo(0, y);
-      ctx.lineTo(canvas_width, y);
+      ctx.lineTo(c_canvas_width, y);
       ctx.stroke();
     }
     ctx.closePath();
@@ -67,14 +65,14 @@ function drawMediumGrid(canvas){
     ctx.strokeWidth = 2
     //宽度是小网格的2倍
     ctx.beginPath();
-    for(var x=0.5;x<canvas_width;x+=15){//初始化 x 为 0.5，这是每条垂直线的起始位置。使用 0.5 是为了确保线条能在像素之间居中，避免模糊。
+    for(var x=0.5;x<c_canvas_width;x+=15){//初始化 x 为 0.5，这是每条垂直线的起始位置。使用 0.5 是为了确保线条能在像素之间居中，避免模糊。
         ctx.moveTo(x,0);	//	moveTo 方法将画笔移动到坐标 (x, 0)，这是垂直线的起点，即Canvas的顶部。
-        ctx.lineTo(x,canvas_hight); //lineTo 方法从当前画笔位置绘制一条直线到坐标 (x, canvas_hight)，这是垂直线的终点，即Canvas的底部。
+        ctx.lineTo(x,c_canvas_hight); //lineTo 方法从当前画笔位置绘制一条直线到坐标 (x, canvas_hight)，这是垂直线的终点，即Canvas的底部。
         ctx.stroke();
     }
-    for(var y=0.5;y<canvas_hight;y+=15){
+    for(var y=0.5;y<c_canvas_hight;y+=15){
         ctx.moveTo(0,y); //	moveTo 方法将画笔移动到坐标 (x, 0)，这是垂直线的起点，即Canvas的左侧顶点。
-        ctx.lineTo(canvas_width,y); //lineTo 方法从当前画笔位置绘制一条直线到坐标 (x, 500)，这是水平直线的终点，即Canvas的右侧顶点。
+        ctx.lineTo(c_canvas_width,y); //lineTo 方法从当前画笔位置绘制一条直线到坐标 (x, 500)，这是水平直线的终点，即Canvas的右侧顶点。
         ctx.stroke();
     }
     ctx.closePath();
@@ -89,14 +87,14 @@ function drawBigGrid(canvas) {
     ctx.strokeStyle = "#e0514b";
     ctx.strokeWidth = 3;
     ctx.beginPath();
-    for (var x = 0.5; x < canvas_width; x += 75) {
+    for (var x = 0.5; x < c_canvas_width; x += 75) {
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas_hight);
+      ctx.lineTo(x, c_canvas_hight);
       ctx.stroke();
     }
-    for (var y = 0.5; y < canvas_hight; y += 75) {
+    for (var y = 0.5; y < c_canvas_hight; y += 75) {
       ctx.moveTo(0, y);
-      ctx.lineTo(canvas_width, y);
+      ctx.lineTo(c_canvas_width, y);
       ctx.stroke();
     }
     ctx.closePath();
@@ -114,7 +112,7 @@ function drawLine_12(canvas,beatArray, beatArrayDenoise) {// 定义一个名为 
   hb.fillStyle = "#000000"; // 设置文本颜色为黑色
   // 12个标准心电导联的名称
   const leadNames = ["I", "II", "III", "aVR", "aVL", "aVF", "V1", "V2", "V3", "V4", "V5", "V6"];
-
+  const leadNamesDenoise = ["I'", "II'", "III'", "aVR'", "aVL'", "aVF'", "V1'", "V2'", "V3'", "V4'", "V5'", "V6'"];
   const lineHeight = 200; // 每行的高度
   const startX = 50; // 起始X坐标
 
@@ -142,6 +140,8 @@ function drawLine_12(canvas,beatArray, beatArrayDenoise) {// 定义一个名为 
     // 绘制去噪心电图
     let denoiseStartY = startY + 80; // 去噪心电图起始Y坐标
     hb.strokeStyle = "#000000"; 
+    // 绘制心电导联名称
+    hb.fillText(leadNamesDenoise[lineIndex], startX - 40, denoiseStartY - 30);
     hb.beginPath(); // 开始一个新的路径
     beatArrayDenoise[lineIndex].forEach((value, index) => {
       hb.lineTo(index + startX + range * -30, denoiseStartY + (value / 0.1575) * 5); // 绘制线条到指定点
@@ -161,10 +161,11 @@ function hide() {
     // 获取画布元素
     var ctx = c_canvas.getContext("2d");
     // 清除画布内容
-    ctx.clearRect(0, 0, canvas_width, canvas_hight);
+    ctx.clearRect(0, 0, c_canvas_width, c_canvas_hight);
 }
 function draw() {
-    drawGrid(c_canvas);
+    drawGrid(c_canvas);//绘制降噪网格
+    drawGrid(s_canvas);//绘制分割网格
     
     drawLine_12(c_canvas,beatArray,beatArrayDenoise);
 
@@ -176,7 +177,7 @@ function draw() {
 
 draw() 
 
-
+console.log("分割结果",beatArraySeg);
 //range改变心电图显示时间段
 $(function() { //这是一个 jQuery 语法，用于在文档加载完毕后执行其中的代码。也就是 $(document).ready() 的简写形式。
     $("#timeRange").on("change", function() {
@@ -192,105 +193,3 @@ $(function() { //这是一个 jQuery 语法，用于在文档加载完毕后执�
 
 
 
-
-
-
-
-
-
-/**绘制单导心电图 */
-// function drawLine_1(c_canvas) {// 定义一个名为 drawLine 的函数，接受一个参数 c_canvas，代表 HTML 中的 <canvas> 元素。
-//     hb = c_canvas.getContext("2d");//使用 getContext("2d") 方法获取绘图上下文，该上下文用于在画布上绘制图形。这里，hb 是一个用于绘制二维图形的 CanvasRenderingContext2D 对象。
-//     hb.strokeStyle = "#0f0";//设置绘制线条的颜色为绿色（十六进制颜色代码为 #0f0）。
-//     hb.lineWidth = 2;//设置绘制线条的宽度为2个像素。
-
-//     hb.beginPath();//开始一个新的路径。在调用 beginPath 之后绘制的图形会构成一条路径。
-//     let beatArray_2 = beatArray.map((value, index) => [index, value]);//把横坐标加上
-//     beatArray_2.forEach(a => {//遍历 beatArray 数组中的每个元素 a。假设 beatArray 是一个二维数组，每个元素 a 是一个包含两个值的数组。
-//         hb.lineTo(a[0] + range * -30, (a[1] /0.1575)*5+100 );//对于 a 的每一个元素，调用 hb.lineTo() 方法，这将在当前路径中添加一条从当前点到指定点的线。
-//     });  // (a[0] + range * -30
-//          // a[1] *100 +100 是 y 坐标。这里将 y 坐标加上 100 以便将线条绘制在画布的中间位置。
-//          // 横坐标+时间单位x像素，纵坐标x增益+横轴位置
-//     /**for循环 */
-//     hb.stroke();//通过描绘路径来渲染线条。使用当前的描边样式（即绿色和 2 像素宽度）绘制出路径。
-//     hb.closePath();//关闭路径。这个方法会创建从当前点到起点的路径线段。
-// }
-
-
-// //根据网格单位测量心电图相关距离
-// var canvas = document.getElementById("heartBeat"); // 得到画布
-// var cl = canvas.getContext("2d"); // 得到画布的上下文对象
-// var flag = false;
-// var x = 0; // 鼠标开始移动的位置X
-// var y = 0; // 鼠标开始移动的位置Y
-// var url = ""; // canvas图片的二进制格式转为dataURL格式
-// /* 为canvas绑定mouse事件 */
-
-// $("canvas")
-//   .mousedown(function(e) {
-//     flag = true;
-//     x = e.offsetX; // 鼠标落下时的X
-//     y = e.offsetY; // 鼠标落下时的Y
-//     // console.log(x, y);
-
-//     $("#mouseTip").css("display", "block");
-//     $("#heartBeat").css("display", "block");
-//     //当点击鼠标，让该canvas和span标签出现
-//   })
-//   .mouseup(function(e) {
-//     flag = false;
-//     url = $("#heartBeat")[0].toDataURL();
-//     // 每次 mouseup 都保存一次画布状态
-//     cl.clearRect(0, 0, canvas.width, canvas.height);
-//     $("#mouseTip").css("display", "none");
-//     $("#heartBeat").css("display", "none");
-//     //当松开鼠标，让该canvas和sapn标签消失
-//   })
-//   .mousemove(function(e) {
-//     drawrule(e); // 绘制方法+
-//   });
-// function drawPencil(e) {
-//   if (flag) {
-//     cl.lineTo(e.offsetX, e.offsetY);
-//     cl.stroke();
-//     // 调用绘制方法
-//   } else {
-//     cl.beginPath();
-//     cl.moveTo(x, y);
-//   }
-// }
-// function drawrule(e) {
-//   if (flag) {
-//     cl.clearRect(0, 0, canvas.width, canvas.height);
-//     cl.beginPath();
-//     cl.strokeStyle = "#f00";
-//     cl.moveTo(x, y);
-//     cl.lineTo(e.offsetX, e.offsetY);
-//     cl.stroke();
-//     var xline = e.offsetX - x;
-//     var yline = e.offsetY - y;
-//     //定义两个变量来记录横纵坐标的点击点和拖动至的点的距离
-//     var print;
-//     //定义变量记录输出值
-//     // console.log(xline + "X");
-//     // console.log(yline + "Y");
-//     if (xline > -yline) {
-//       //判断横向距和纵向距离大小区别，发生变化时给出不同的单位
-//       xline *= 200 / 15;
-//       print = xline + "ms";
-//     } else {
-//       yline *= 0.5 / 15;
-//       print = yline + "mv";
-//     }
-//     document.getElementById("mouseTip").innerHTML = print;
-//   } //横向15px=200ms,纵向15px=0.5mv
-// }
-
-// //标签跟着鼠标移动
-// document.onmousemove = function(ev) {
-//   var oEvent = ev || event;
-//   var oDiv = document.getElementById("mouseTip");
-//   oDiv.style.left = oEvent.clientX + 10 + "px";
-//   oDiv.style.top = oEvent.clientY - 20 + "px";
-//   //距离鼠标的位置，
-// };
