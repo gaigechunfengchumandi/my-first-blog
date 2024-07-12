@@ -14,6 +14,8 @@ var c_canvas = document.getElementById("Denoise_contrast");//定义降噪画布
 var s_canvas = document.getElementById("segment");//定义分割画布
 var c_canvas_width = 1326;//定义降噪画布宽度
 var c_canvas_hight = 2400;//定义降噪画布高度
+var s_canvas_width = 1326;//定义降噪画布宽度
+var s_canvas_hight = 800;//定义降噪画布高度
 var range = 0; //定义初始时间
 // #endregion
 
@@ -25,10 +27,10 @@ var range = 0; //定义初始时间
  * drawMediumGrid中网格
  * drawBigGrid大网格
  */
-function drawGrid(canvas) {
-    drawSmallGrid(canvas);
-    drawMediumGrid(canvas);
-    drawBigGrid(canvas);
+function drawGrid(canvas,canvas_width,canvas_hight) {
+    drawSmallGrid(canvas,canvas_width,canvas_hight);
+    drawMediumGrid(canvas,canvas_width,canvas_hight);
+    drawBigGrid(canvas,canvas_width,canvas_hight);
     return;
   }
 
@@ -37,19 +39,19 @@ function drawGrid(canvas) {
  * 第一个for语句循环出纵向小方格细线条，间距为X轴方向3像素
  * 第二个for语句循环出横向小方格细线条，间距为Y轴方向3像素
  */
-function drawSmallGrid(canvas) {
+function drawSmallGrid(canvas,canvas_width,canvas_hight) {
     ctx = canvas.getContext("2d");
     ctx.strokeStyle = "#f1dedf";
     ctx.strokeWidth = 1;
     ctx.beginPath();
-    for (var x = 0.5; x < c_canvas_width; x += 3) {
+    for (var x = 0.5; x < canvas_width; x += 3) {
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, c_canvas_hight);
+      ctx.lineTo(x, canvas_hight);
       ctx.stroke();
     }
-    for (var y = 0.5; y < c_canvas_hight; y += 3) {
+    for (var y = 0.5; y < canvas_hight; y += 3) {
       ctx.moveTo(0, y);
-      ctx.lineTo(c_canvas_width, y);
+      ctx.lineTo(canvas_width, y);
       ctx.stroke();
     }
     ctx.closePath();
@@ -59,20 +61,20 @@ function drawSmallGrid(canvas) {
  * 第一个for语句循环出纵向中方格中线条，间距为X轴方向15像素，小网格的5倍
  * 第二个for语句循环出横向中方格中线条，间距为Y轴方向15像素，小网格的5倍
  */
-function drawMediumGrid(canvas){
+function drawMediumGrid(canvas,canvas_width,canvas_hight){
     ctx = canvas.getContext("2d");
     ctx.strokeStyle="#fdbeb9";
     ctx.strokeWidth = 2
     //宽度是小网格的2倍
     ctx.beginPath();
-    for(var x=0.5;x<c_canvas_width;x+=15){//初始化 x 为 0.5，这是每条垂直线的起始位置。使用 0.5 是为了确保线条能在像素之间居中，避免模糊。
+    for(var x=0.5;x<canvas_width;x+=15){//初始化 x 为 0.5，这是每条垂直线的起始位置。使用 0.5 是为了确保线条能在像素之间居中，避免模糊。
         ctx.moveTo(x,0);	//	moveTo 方法将画笔移动到坐标 (x, 0)，这是垂直线的起点，即Canvas的顶部。
-        ctx.lineTo(x,c_canvas_hight); //lineTo 方法从当前画笔位置绘制一条直线到坐标 (x, canvas_hight)，这是垂直线的终点，即Canvas的底部。
+        ctx.lineTo(x,canvas_hight); //lineTo 方法从当前画笔位置绘制一条直线到坐标 (x, canvas_hight)，这是垂直线的终点，即Canvas的底部。
         ctx.stroke();
     }
-    for(var y=0.5;y<c_canvas_hight;y+=15){
+    for(var y=0.5;y<canvas_hight;y+=15){
         ctx.moveTo(0,y); //	moveTo 方法将画笔移动到坐标 (x, 0)，这是垂直线的起点，即Canvas的左侧顶点。
-        ctx.lineTo(c_canvas_width,y); //lineTo 方法从当前画笔位置绘制一条直线到坐标 (x, 500)，这是水平直线的终点，即Canvas的右侧顶点。
+        ctx.lineTo(canvas_width,y); //lineTo 方法从当前画笔位置绘制一条直线到坐标 (x, 500)，这是水平直线的终点，即Canvas的右侧顶点。
         ctx.stroke();
     }
     ctx.closePath();
@@ -82,19 +84,19 @@ function drawMediumGrid(canvas){
  * 第一个for语句循环出纵向大方格中线条，间距为X轴方向75像素，小网格的5倍
  * 第二个for语句循环出横向大方格中线条，间距为Y轴方向75像素，小网格的5倍
  */
-function drawBigGrid(canvas) {
+function drawBigGrid(canvas,canvas_width,canvas_hight) {
     ctx = canvas.getContext("2d");
     ctx.strokeStyle = "#e0514b";
     ctx.strokeWidth = 3;
     ctx.beginPath();
-    for (var x = 0.5; x < c_canvas_width; x += 75) {
+    for (var x = 0.5; x < canvas_width; x += 75) {
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, c_canvas_hight);
+      ctx.lineTo(x, canvas_hight);
       ctx.stroke();
     }
-    for (var y = 0.5; y < c_canvas_hight; y += 75) {
+    for (var y = 0.5; y < canvas_hight; y += 75) {
       ctx.moveTo(0, y);
-      ctx.lineTo(c_canvas_width, y);
+      ctx.lineTo(canvas_width, y);
       ctx.stroke();
     }
     ctx.closePath();
@@ -102,7 +104,10 @@ function drawBigGrid(canvas) {
 }
 // #endregion
 
-/**绘制心电图线 */
+
+
+// #endregion
+/**绘制降噪心电图线 */
 function drawLine_12(canvas,beatArray, beatArrayDenoise) {// 定义一个名为 drawLine 的函数，接受一个参数 c_canvas，代表 HTML 中的 <canvas> 元素。
   hb = canvas.getContext("2d");//使用 getContext("2d") 方法获取绘图上下文，该上下文用于在画布上绘制图形。这里，hb 是一个用于绘制二维图形的 CanvasRenderingContext2D 对象。
   hb.strokeStyle = "#000000";//设置绘制线条的颜色为绿色（十六进制颜色代码为 #0f0）。
@@ -134,7 +139,7 @@ function drawLine_12(canvas,beatArray, beatArrayDenoise) {// 定义一个名为 
       // 	/ 0.1575 是一个缩放因子，用于将电压值转换为像素值。这个因子的具体值取决于心电图数据的单位和图形的比例。
       // 	* 5 是另一个缩放因子，用于进一步调整绘图的大小，使得图形在画布上看起来合适。
     });
-    hb.stroke();//通过描绘路径来渲染线条。使用当前的描边样式（即绿色和 2 像素宽度）绘制出路径。
+    hb.stroke();//通过描绘路径来渲染线条。使用当前的描边样式（即绿色和 1 像素宽度）绘制出路径。
     hb.closePath();//关闭路径。这个方法会创建从当前点到起点的路径线段。
 
     // 绘制去噪心电图
@@ -152,8 +157,77 @@ function drawLine_12(canvas,beatArray, beatArrayDenoise) {// 定义一个名为 
   });
 }
 
-// #endregion
 
+/**现有如下心电图线beatArrayDenoise，以及分割数结果beatArraySeg，beatArraySeg形状与beatArrayDenoise一致，里面的每一个元素是0123，代表4个类别，
+ * 一下代码是在beatArrayDenoise基础上，添加了分割结果，不同的类用不同的颜色表示出来
+ */
+function drawLine_seg_backup(canvas, beatArrayDenoise) {
+  hb = canvas.getContext("2d");
+  hb.strokeStyle = "#000000";
+  hb.lineWidth = 1;
+  
+  hb.font = "16px Arial"; // 设置字体样式和大小为20px
+  hb.fillStyle = "#000000"; // 设置文本颜色为黑色
+  // 12个标准心电导联的名称
+  const leadNamesDenoise = ["I'", "II'", "III'", "aVR'", "aVL'", "aVF'", "V1'", "V2'", "V3'", "V4'", "V5'", "V6'"];
+  const lineHeight = 100; // 每行的高度
+  const startX = 50; // 起始X坐标
+
+  // 绘制每一行心电图
+  beatArrayDenoise.forEach((beatLine, lineIndex) => {
+    let startY = 50 + lineIndex * lineHeight; 
+    // 绘制心电导联名称
+    hb.fillText(leadNamesDenoise[lineIndex], startX - 40, startY - 30);
+    // 绘制心电图
+    hb.beginPath();
+    beatLine.forEach((value, index) => {
+      hb.lineTo(index + startX + range * -30, startY + (value / 0.1575) * 5); 
+    });
+
+    hb.stroke();
+    hb.closePath();
+  });
+}
+/** 现有如下心电图线beatArrayDenoise，以及分割数结果beatArraySeg，beatArraySeg形状与beatArrayDenoise一致，里面的每一个元素是0123，代表4个类别，
+ * 以下代码是在beatArrayDenoise基础上，添加了分割结果，不同的类用不同的颜色表示出来
+ */
+function drawLine_seg(canvas, beatArrayDenoise, beatArraySeg) {
+  // 选择需要的导联，注意数组索引从0开始
+  beatArrayDenoise = beatArrayDenoise.filter((_, index) => 
+  index === 0 || index === 1 || index === 2 || index === 6 || index === 7 || index === 8 || index === 9 || index === 10 || index === 11
+  );
+  const hb = canvas.getContext("2d");
+  const colors = ["#000000", "#00FF00", "#0000FF", "#FFFF00"]; // 4种类别的颜色
+  hb.lineWidth = 1;
+
+  hb.font = "16px Arial"; // 设置字体样式和大小为16px
+  hb.fillStyle = "#000000"; // 设置文本颜色为黑色
+  // 12个标准心电导联的名称
+  const leadNamesDenoise = ["I'", "II'", "III'", "aVR'", "aVL'", "aVF'", "V1'", "V2'", "V3'", "V4'", "V5'", "V6'"];
+  const lineHeight = 100; // 每行的高度
+  const startX = 50; // 起始X坐标
+
+  // 绘制每一行心电图
+  beatArrayDenoise.forEach((beatLine, lineIndex) => {
+    let startY = 50 + lineIndex * lineHeight;
+    // 绘制心电导联名称
+    hb.fillText(leadNamesDenoise[lineIndex], startX - 40, startY - 30);
+    // 绘制心电图
+    hb.beginPath();
+    beatLine.forEach((value, index) => {
+      const segment = beatArraySeg[lineIndex][index];
+      hb.strokeStyle = colors[segment];
+      hb.lineTo(index + startX, startY + (value / 0.1575) * 5);
+      hb.stroke();
+      hb.beginPath();
+      hb.moveTo(index + startX, startY + (value / 0.1575) * 5);
+    });
+    hb.closePath();
+  });
+}
+
+
+// #endregion
 
 // #region call by 心电图显示时间段
 //清除画布
@@ -164,10 +238,11 @@ function hide() {
     ctx.clearRect(0, 0, c_canvas_width, c_canvas_hight);
 }
 function draw() {
-    drawGrid(c_canvas);//绘制降噪网格
-    drawGrid(s_canvas);//绘制分割网格
+    drawGrid(c_canvas,c_canvas_width,c_canvas_hight);//绘制降噪网格
+    drawGrid(s_canvas,s_canvas_width,s_canvas_hight);//绘制分割网格
     
     drawLine_12(c_canvas,beatArray,beatArrayDenoise);
+    // drawLine_seg(s_canvas,beatArrayDenoise,beatArraySeg);
 
     return;
 }

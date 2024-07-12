@@ -70,7 +70,7 @@ body {
     padding: 10px;
     /* 防止元素内容溢出，添加滚动条以便查看全部内容 */
     overflow: auto;
-    height: 200px; /* 假设默认高度是 200px */
+    height: 600px; 
     flex-grow: 1; /* 使block2在容器内扩展以填充可用空间 */
 }    
 .block {

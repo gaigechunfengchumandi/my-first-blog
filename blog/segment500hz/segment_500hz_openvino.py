@@ -43,8 +43,8 @@ def predict_ecg_data(ecg_data):
     global exec_net
     readmodel = 1
 
-    print("step1")
-    feature = np.zeros((1,1008, 1))
+    
+    feature = ecg_data #np.zeros((1,1008, 1))
 
 
     input_blob = next(iter(net.input_info))
@@ -55,23 +55,21 @@ def predict_ecg_data(ecg_data):
 
     feature_pred_1 = feature_pred_ori[output_blob]
   
-    del feature_pred_1
     del feature_pred_ori
     gc.collect()
-    print("step8")
-    return ecg_data
+    return feature_pred_1
 
 def go_throught_model(unlabel_data):
-    slice_data =[]
-    pred_9_lead = []
+    slice_data =[] # 用于存放滑窗分割出来的2s片段
+    pred_9_lead = [] # 用于存放预测结果，9导联分别的到9个预测结果，一个个地往这个列表添加
     step = 500 # 滑窗步长
     max_segment_num = int((5008-1008)//step)
     for i in range(max_segment_num+1):
         win_start_idx = i*step
         win_end_idx = win_start_idx + 1008
         slice_data.append(unlabel_data[win_start_idx:win_end_idx])
-    slice_data = np.array(slice_data)
-    for lead_idx in range(9):
+    slice_data = np.array(slice_data)# 这里的形状是（n,1008,9）n(9)是片段数，9是9导联
+    for lead_idx in range(9):# 把导联一个一个取出来，推理完之后再合回来
         data_clip2s_single_lead = slice_data[:,:,lead_idx:lead_idx+1]#lead_idx:lead_idx+1可以保持切片后仍人保持3维的（n,1008,9）->(n,1008,1)
         pred_single_lead = predict_ecg_data(data_clip2s_single_lead)#ndarray(n,1008,4)
         pred_single_lead = np.argmax(pred_single_lead,axis=2)#ndarray(n,1008)把每格采样点的预测结果最大的索引取到
@@ -105,13 +103,12 @@ def extract_wave(data_9_lead, model_out, lead_idx):
 
 
 def segment_2s(denoise_data):
-    data_128hz = denoise_data
-
+    data_128hz = denoise_data#拿到降噪后的数据（12，1280）
     # 将数据从 128 Hz 重采样到 500 Hz
     # 新的采样点数目为 (500 / 128) * 原来的采样点数目
     num_samples = int(500 / 128 * data_128hz.shape[1])
     data_500hz = signal.resample(data_128hz, num_samples, axis=1).transpose() # data_500hz 12通道数据 (5000,12)
-    input_lead = [0,1,2,6,7,8,9,10,11]
+    input_lead = [0,1,2,6,7,8,9,10,11]# 定义用于预测的导联
     ecg_data = data_500hz[:,input_lead]# ecg_data 9通道数据 (5000,9)
     zero_box = np.zeros((8,9))
     ecg_zero_box = np.concatenate((ecg_data,zero_box),axis=0) # (5008,9)
@@ -124,7 +121,27 @@ def segment_2s(denoise_data):
 
         combine_result_9_lead.append(combine_result)
     combine_result_9_lead = np.array(combine_result_9_lead)# (9,5008)9个导联的分割结果
-    return combine_result_9_lead
+    # 去掉每一列的后8个元素
+    trimmed_array = combine_result_9_lead[:, :-8]
+
+    # 确认 trimmed_array 的形状是 (9, 5000)
+    assert trimmed_array.shape == (9, 5000), "The shape of trimmed array is not correct."
+
+
+
+    # 将每一行降采样成 1280 个元素
+    downsampled_array = downsample(trimmed_array, 1280)
+
+    return downsampled_array
+
+# 定义一个函数进行降采样
+def downsample(array, target_length):
+    factor = array.shape[1] // target_length #factor 是一个整数，表示在降采样过程中要跳过的元素数。具体来说，它是原始列数 m 除以目标列数 target_length 的整数部分。
+    return array[:, ::factor][:, :target_length]#对于 array.shape[1] = 5000 和 target_length = 1280，factor 计算结果为 5000 // 1280 = 3。这意味着我们每隔 3 个元素选择一个元素，以实现降采样。
+    #array[:, ::factor]: 对数组进行切片操作，选择每行中每隔 factor 个元素的一个元素。具体来说，它会从每行的第一个元素开始，每隔 factor 个元素选择一个元素。
+    #例如，factor = 3 时，对于一行 [a0, a1, a2, a3, a4, a5, a6, ...]，会选择 [a0, a3, a6, ...]。
+    # [:, :target_length]: 确保结果数组的每行都正好有 target_length 个元素。由于前面的切片操作可能会多出几个元素，这一步确保我们只保留前 target_length 个元素。
+
 
 if __name__ == "__main__":
 
