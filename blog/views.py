@@ -96,13 +96,14 @@ def post_edit(request, pk):
             if request.FILES: # 检查是否有文件上传。
                 for file in request.FILES.values():# 遍历所有上传的文件。
                     array,array_denoise = signal_view_12(file) # 调用 signal_view_12 函数处理文件，返回两个数组。array是降噪前的，array_denoise是降噪后的
-                    array_segment = segment_2s(array_denoise)
+                    array_segment, perameter = segment_2s(array_denoise)
                     context['array'] = json.dumps(array.tolist())  # 将 numpy 数组转换为列表，然后转换为 JSON 字符串，并存储在 context 字典中。
                     context['array_denoise'] = json.dumps(array_denoise.tolist())# 同样地处理降噪后的数组。
                     context['array_segment'] = json.dumps(array_segment.tolist())
+                    context['perameter'] = json.dumps(perameter)
             post.save()#保存 post 对象到数据库。
             # 渲染模板并返回响应，将表单和数组数据传递给模板。
-            return render(request, 'blog/post_edit.html', {'form': form, 'array': context.get('array'), 'array_denoise': context.get('array_denoise'),'array_segment': context.get('array_segment')})
+            return render(request, 'blog/post_edit.html', {'form': form, 'array': context.get('array'), 'array_denoise': context.get('array_denoise'),'array_segment': context.get('array_segment'), 'perameter': context.get('perameter')})
     else: #处理非 POST 请求（即 GET 请求）。
         form = PostForm(instance=post)# 创建一个 PostForm 表单实例，使用 post 对象填充表单
     return render(request, 'blog/post_edit.html', {'form':form})# 渲染模板并返回响应，只传递表单数据给模板。

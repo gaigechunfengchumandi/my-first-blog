@@ -102,9 +102,9 @@ table, th, td {
     text-align: center;
     padding: 5px;
 }
-.chart {
+.chart-container {
     border: 1px solid #000;
-    height: 200px;
+    height: 500px;
     margin-bottom: 10px;
 }
 .diagnosis {

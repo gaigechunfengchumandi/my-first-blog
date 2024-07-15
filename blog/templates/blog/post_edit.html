@@ -42,6 +42,7 @@
                         window.beatArray = {{ array|safe }};
                         window.beatArrayDenoise = {{ array_denoise|safe }};
                         window.beatArraySeg = {{ array_segment|safe }};
+                        window.perameter = {{ perameter|safe }};
                     </script>
                 {% else %}
                     <p>文件未选取</p>
@@ -60,59 +61,32 @@
             <div class="block3">
                 <h3>分析诊断</h3>
                 <!-- 将上传的文件经过python函数2处理后显示在页面上 -->
-                <canvas id="segment" width="1326px" height="800px"></canvas>
+                <canvas id="segment" width="1326px" height="1000px"></canvas>
             </div>
         </div>
         <div class="right">
             <div class="block">
-                <h3>参数</h3>
+                <h3>特征参数</h3>
                 <div class="table-container">
-                    <table>
-                        <tr>
-                            <th>参数</th>
-                            <th>I</th>
-                            <th>II</th>
-                            <th>V1</th>
-                            <th>...</th>
-                            <th>V6</th>
-                        </tr>
-                        <tr>
-                            <td>QRS</td>
-                            <td>----</td>
-                            <td>----</td>
-                            <td>----</td>
-                            <td>----</td>
-                            <td>----</td>
-                        </tr>
-                        <tr>
-                            <td>RR间期</td>
-                            <td>----</td>
-                            <td>----</td>
-                            <td>----</td>
-                            <td>----</td>
-                            <td>----</td>
-                        </tr>
-                        <tr>
-                            <td>PR间期</td>
-                            <td>----</td>
-                            <td>----</td>
-                            <td>----</td>
-                            <td>----</td>
-                            <td>----</td>
-                        </tr>
-                        <tr>
-                            <td>ST间期</td>
-                            <td>----</td>
-                            <td>----</td>
-                            <td>----</td>
-                            <td>----</td>
-                            <td>----</td>
-                        </tr>
+                    <table id="parameterTable">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
                     </table>
                 </div>
-                <div class="chart">
-                    <!-- Placeholder for chart -->
+                <div class="chart-container">
                     <h3>参数变化</h3>
+                    <div class="chart">
+                        <canvas id="rrIntervalChart"></canvas>
+                    </div>
+                    <div class="chart">
+                        <canvas id="prLenChart"></canvas>
+                    </div>
                 </div>
             </div>
             <div class="diagnosis">
@@ -124,6 +98,40 @@
     </div>
 
     <script src="{% static 'js/heartbeat.js' %}" defer></script>
+    <script src="{% static 'js/perameter_chart.js' %}" defer></script>
+    <script>
+        function populateTable() {
+            // 获取表格主体部分 <tbody> 的引用，供后续添加行
+            const tableBody = document.getElementById('parameterTable').getElementsByTagName('tbody')[0];
+            
+            // 遍历 window.perameter 对象的每一个属性
+            for (const key in window.perameter) {
+                // 检查属性是否是对象本身的属性（排除继承的属性）
+                if (window.perameter.hasOwnProperty(key) && !Array.isArray(window.perameter[key])){
+                    // 创建一个新的表格行 <tr>
+                    const row = document.createElement('tr');
+                    
+                    // 创建两个新的单元格 <td> 用于存放参数名和参数值
+                    const cell1 = document.createElement('td');
+                    const cell2 = document.createElement('td');
+                    
+                    // 将参数名（属性名）作为文本内容添加到第一个单元格
+                    cell1.textContent = key;
+                    
+                    // 将参数值（属性值）作为文本内容添加到第二个单元格
+                    cell2.textContent = window.perameter[key];
+                    
+                    // 将这两个单元格添加到新创建的行中
+                    row.appendChild(cell1);
+                    row.appendChild(cell2);
+                    
+                    // 将新创建的行添加到表格主体 <tbody> 中
+                    tableBody.appendChild(row);
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', populateTable);
+    </script>
 </body>
 </html>
 
