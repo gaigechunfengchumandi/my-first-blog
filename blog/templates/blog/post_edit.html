@@ -14,25 +14,7 @@
     <div class="container">
         <div class="left">
             <div class="block1">
-                <script>
-                    function changeFile(){
-                        console.log(99999);
-                    }
-                    // 监听文档内容加载完成事件
-                    document.addEventListener("DOMContentLoaded", function() {
-                        // 获取页面上的文件输入元素
-                        const fileInput = document.querySelector('input[type="file"]');
-                        // 获取页面上的表单元素
-                        const form = document.querySelector('form');
-            
-                        // 为文件输入元素添加一个事件监听器，监听文件变化事件
-                        fileInput.addEventListener('change', function() {
-                            // 当文件变化时，自动提交表单
-                            form.submit();
-                        });
-                    });
-                </script>
-                <form method="post" enctype="multipart/form-data" onchange="changeFile">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     {{ form.as_p }}
                 </form>
@@ -87,6 +69,12 @@
                     <div class="chart">
                         <canvas id="prLenChart"></canvas>
                     </div>
+                    <div class="chart">
+                        <canvas id="qtLenChart"></canvas>
+                    </div>
+                    <div class="chart">
+                        <canvas id="qrsHigChart"></canvas>
+                    </div>
                 </div>
             </div>
             <div class="diagnosis">
@@ -106,7 +94,7 @@
             
             // 遍历 window.perameter 对象的每一个属性
             for (const key in window.perameter) {
-                // 检查属性是否是对象本身的属性（排除继承的属性）
+                // 检查属性是否是对象本身的属性（排除继承的属性）且属性不是list列表
                 if (window.perameter.hasOwnProperty(key) && !Array.isArray(window.perameter[key])){
                     // 创建一个新的表格行 <tr>
                     const row = document.createElement('tr');
@@ -119,8 +107,19 @@
                     cell1.textContent = key;
                     
                     // 将参数值（属性值）作为文本内容添加到第二个单元格
-                    cell2.textContent = window.perameter[key];
+                    // 获取参数值（属性值）
+                    let value = window.perameter[key];
                     
+                    // 根据需要为值追加单位
+                    if (value > 5) {
+                        value = `${value} ms`;
+                    }
+                    else{
+                        value = `${value} mv`;
+                    }
+                    // 将处理后的参数值作为文本内容添加到第二个单元格
+                    cell2.textContent = value;
+        
                     // 将这两个单元格添加到新创建的行中
                     row.appendChild(cell1);
                     row.appendChild(cell2);
@@ -131,6 +130,21 @@
             }
         }
         document.addEventListener('DOMContentLoaded', populateTable);
+    </script>
+    <script>
+        // 监听文档内容加载完成事件，document对象是一个全局对象，表示整个HTML或XML文档。它是Web页面的入口点，通过它可以访问和操作页面的内容和结构。
+        document.addEventListener("DOMContentLoaded", function() {//这个事件监听器会在整个HTML文档完全加载和解析完成之后执行。这样可以确保脚本中查询到的DOM元素是可用的。
+            // 获取页面上的文件输入元素
+            const fileInput = document.querySelector('input[type="file"]');
+            // 获取页面上的表单元素
+            const form = document.querySelector('form');
+
+            // 为文件输入元素添加一个事件监听器，监听文件变化事件
+            fileInput.addEventListener('change', function() {
+                // 当文件变化时，自动提交表单
+                form.submit();
+            });
+        });
     </script>
 </body>
 </html>

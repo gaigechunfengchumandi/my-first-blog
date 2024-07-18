@@ -166,23 +166,23 @@ def predict_ecg_data(ecg_data, sample_rate):
     return ecg_data
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    # data = pd.read_table('/home/devel/data', names=['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'ch7', 'ch8', 'ch9', 'ch10', 'ch11', 'ch12'])
-    # ECGdata1 = np.stack([data.ch1[2:], data.ch2[2:], data.ch3[2:], data.ch4[2:], data.ch5[2:], data.ch6[2:], data.ch7[2:], data.ch8[2:], data.ch9[2:], data.ch10[2:], data.ch11[2:], data.ch12[2:]])
-    # ECGdata1 = ECGdata1.transpose()
-    # ecg_data = ECGdata1.astype('float64')
-    # ecg_data = ecg_data/200
-    ecg_data = np.zeros([1280,12])
+#     # data = pd.read_table('/home/devel/data', names=['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'ch7', 'ch8', 'ch9', 'ch10', 'ch11', 'ch12'])
+#     # ECGdata1 = np.stack([data.ch1[2:], data.ch2[2:], data.ch3[2:], data.ch4[2:], data.ch5[2:], data.ch6[2:], data.ch7[2:], data.ch8[2:], data.ch9[2:], data.ch10[2:], data.ch11[2:], data.ch12[2:]])
+#     # ECGdata1 = ECGdata1.transpose()
+#     # ecg_data = ECGdata1.astype('float64')
+#     # ecg_data = ecg_data/200
+#     ecg_data = np.zeros([1280,12])
 
-    sample_rate = 128
-    # del data
-    # del ECGdata1
-    gc.collect()
+#     sample_rate = 128
+#     # del data
+#     # del ECGdata1
+#     gc.collect()
 
-    initialize_variable()
+#     initialize_variable()
 
-    denoise_ecg_data = predict_ecg_data(ecg_data, sample_rate)
+#     denoise_ecg_data = predict_ecg_data(ecg_data, sample_rate)
 
-    print('finish Analyze')
+#     print('finish Analyze')
 
