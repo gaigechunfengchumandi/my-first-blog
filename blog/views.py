@@ -132,6 +132,8 @@ def signal_view_12(file):
 
     # 降噪函数调用
     array_denose = signal_denoise(data)
+    array = array*-1#-------------------------------------------检查一下数据问题
+    array_denose = array_denose*-1
 
     return array, array_denose
 

@@ -15,7 +15,7 @@ RUN pip3 install -r requirements.txt
 EXPOSE 8000
 
 # 定义环境变量：设置 DJANGO_SETTINGS_MODULE 环境变量为你的 Django 项目的设置模块。
-ENV DJANGO_SETTINGS_MODULE=mysite.settings.py
+ENV DJANGO_SETTINGS_MODULE=mysite.settings
 
 # 运行 Django 开发服务器：使用 CMD 指令运行 Django 开发服务器，使其监听所有 IP 地址的 8000 端口。
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

@@ -53,8 +53,8 @@
                     <table id="parameterTable">
                         <thead>
                             <tr>
-                                <th>Parameter</th>
-                                <th>Value</th>
+                                <th>特性参数(单位)</th>
+                                <th>测量值</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -110,14 +110,6 @@
                     // 获取参数值（属性值）
                     let value = window.perameter[key];
                     
-                    // 根据需要为值追加单位
-                    if (value > 5) {
-                        value = `${value} ms`;
-                    }
-                    else{
-                        value = `${value} mv`;
-                    }
-                    // 将处理后的参数值作为文本内容添加到第二个单元格
                     cell2.textContent = value;
         
                     // 将这两个单元格添加到新创建的行中
