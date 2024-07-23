@@ -2,8 +2,7 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
-
-
+sys.path.append('/usr/local/lib/python3.8/site-packages/django/bin')
 def main():
     """Run administrative tasks."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
