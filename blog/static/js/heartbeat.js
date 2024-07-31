@@ -15,12 +15,12 @@ var s_canvas = document.getElementById("segment");//定义分割画布
 var c_canvas_width = 1326;//定义降噪画布宽度
 var c_canvas_hight = 2400;//定义降噪画布高度
 var s_canvas_width = 1326;//定义降噪画布宽度
-var s_canvas_hight = 1000;//定义降噪画布高度
+var s_canvas_hight = 1400;//定义降噪画布高度
 var range = 0; //定义初始时间
 // #endregion
 
 
-// #region call by draw()
+// #region 绘制网格 & 绘制心电图信号 call by draw()
 /* 绘制网格总函数
  * 分别绘制
  * drawSmallGrid小网格
@@ -34,7 +34,7 @@ function drawGrid(canvas,canvas_width,canvas_hight) {
     return;
   }
 
-// #region call by drawGrid()
+// #region 绘制大中小型网格 call by drawGrid()
 /**绘制小网格
  * 第一个for语句循环出纵向小方格细线条，间距为X轴方向3像素
  * 第二个for语句循环出横向小方格细线条，间距为Y轴方向3像素
@@ -104,10 +104,8 @@ function drawBigGrid(canvas,canvas_width,canvas_hight) {
 }
 // #endregion
 
-
-
-// #endregion
-/**绘制降噪心电图线 */
+// #region 绘制心电图线
+//绘制降噪心电图线
 function drawLine_denoise(canvas,beatArray, beatArrayDenoise) {// 定义一个名为 drawLine 的函数，接受一个参数 c_canvas，代表 HTML 中的 <canvas> 元素。
   hb = canvas.getContext("2d");//使用 getContext("2d") 方法获取绘图上下文，该上下文用于在画布上绘制图形。这里，hb 是一个用于绘制二维图形的 CanvasRenderingContext2D 对象。
   hb.strokeStyle = "#000000";//设置绘制线条的颜色为绿色（十六进制颜色代码为 #0f0）。
@@ -123,7 +121,7 @@ function drawLine_denoise(canvas,beatArray, beatArrayDenoise) {// 定义一个�
 
   // 遍历心电图的各个导联，每一个循环画两条，一条是降噪前的，一条是降噪后的
   beatArray.forEach((leadLine, lineIndex) => {
-    let startY = 50 + lineIndex * lineHeight; // 计算降噪前的起始Y坐标
+    let startY = 80 + lineIndex * lineHeight; // 计算降噪前的起始Y坐标
     hb.strokeStyle = "#000000"; // 设置文本颜色为黑色
     hb.fillText(leadNames[lineIndex], startX - 40, startY - 30);// 绘制降噪前的导联名称
     // 绘制降噪前的心电图
@@ -149,28 +147,21 @@ function drawLine_denoise(canvas,beatArray, beatArrayDenoise) {// 定义一个�
   });
 }
 
-/** 现有如下心电图线beatArrayDenoise，以及分割数结果beatArraySeg，beatArraySeg形状与beatArrayDenoise一致，里面的每一个元素是0123，代表4个类别，
- * 以下代码是在beatArrayDenoise基础上，添加了分割结果，不同的类用不同的颜色表示出来
- */
+//现有心电图线beatArrayDenoise，以及分割数结果beatArraySeg，形状一致，后者的每一个元素是0123，代表4个类别，在beatArrayDenoise基础上，用不同的颜色把分割结果的类表示出来
 function drawLine_seg(canvas, beatArrayDenoise, beatArraySeg) {
-  // 选择需要的导联，注意数组索引从0开始
-  beatArrayDenoise = beatArrayDenoise.filter((_, index) => 
-  index === 0 || index === 1 || index === 2 || index === 6 || index === 7 || index === 8 || index === 9 || index === 10 || index === 11
-  );
   const hb = canvas.getContext("2d");
   const colors = ["#000000", "#00CED1", "#8A2BE2", "#FF8C00"]; // 黑色, 深青色, 蓝紫色, 暗橙色 (背景，p，qrs，t)
   hb.lineWidth = 1.5;
-
   hb.font = "16px Arial"; // 设置字体样式和大小为16px
   hb.fillStyle = "#000000"; // 设置文本颜色为黑色
   // 12个标准心电导联的名称
-  const leadNamesDenoise = ["I'", "II'", "III'", "V1'", "V2'", "V3'", "V4'", "V5'", "V6'"];
+  const leadNamesDenoise = ["I", "II", "III", "aVR", "aVL", "aVF", "V1", "V2", "V3", "V4", "V5", "V6"];
   const lineHeight = 100; // 每行的高度
   const startX = 50; // 起始X坐标
 
   // 绘制每一导联心电图
   beatArrayDenoise.forEach((beatLine, lineIndex) => {
-    let startY = 50 + lineIndex * lineHeight;
+    let startY = 80 + lineIndex * lineHeight;
     // 绘制心电导联名称
     hb.fillText(leadNamesDenoise[lineIndex], startX - 40, startY - 30);
     // 绘制心电图
@@ -194,10 +185,12 @@ function drawLine_seg(canvas, beatArrayDenoise, beatArraySeg) {
   });
 }
 
-
+// #endregion
 // #endregion
 
-// #region call by 心电图显示时间段
+// #region draw & hide call by 改变心电图显示时间段
+
+draw() 
 //清除画布
 function hide() {
     // 获取画布元素
@@ -214,14 +207,9 @@ function draw() {
 
     return;
 }
-
 // #endregion
 
 
-draw() 
-
-console.log("分割结果",beatArraySeg);
-console.log("参数结果",perameter);
 //range改变心电图显示时间段
 $(function() { //这是一个 jQuery 语法，用于在文档加载完毕后执行其中的代码。也就是 $(document).ready() 的简写形式。
     $("#timeRange").on("change", function() {

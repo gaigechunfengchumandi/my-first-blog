@@ -18,14 +18,15 @@
                     {% csrf_token %}
                     {{ form.as_p }}
                 </form>
-                {% if array %}
+                {% if array_ori %}
                     <p>文件已上传</p>
                     <script>
-                        window.beatArray = {{ array|safe }};
+                        window.beatArray = {{ array_ori|safe }};
                         window.beatArrayDenoise = {{ array_denoise|safe }};
                         window.beatArraySeg = {{ array_segment|safe }};
                         window.perameter = {{ perameter|safe }};
                     </script>
+                    
                 {% else %}
                     <p>文件未选取</p>
                 {% endif %}
@@ -43,7 +44,7 @@
             <div class="block3">
                 <h3>分析诊断</h3>
                 <!-- 将上传的文件经过python函数2处理后显示在页面上 -->
-                <canvas id="segment" width="1326px" height="1000px"></canvas>
+                <canvas id="segment" width="1326px" height="1400px"></canvas>
             </div>
         </div>
         <div class="right">

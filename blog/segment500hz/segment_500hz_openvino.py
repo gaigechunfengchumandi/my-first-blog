@@ -7,6 +7,8 @@ import time
 import math
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.signal import find_peaks
+
 
 # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 #
@@ -17,7 +19,6 @@ import matplotlib.pyplot as plt
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 readmodel = None
-
 
 # 这个函数在view里调用，页面初始化的时候就初始化模型
 def initialize_variable_s():
@@ -35,6 +36,8 @@ def initialize_variable_s():
         net = ie.read_network(model=model_xml, weights=model_bin)
         exec_net = ie.load_network(network=net, device_name='CPU')
 
+
+# region 模型处理代码
 #直接对openvino模型的调用， 输入的形状必须是(9,1008,1)，输出的形状是(9.1008,4) 该函数被go_throught_model调用
 def openvino_predict(ecg_data):
 
@@ -43,9 +46,7 @@ def openvino_predict(ecg_data):
     global exec_net
     readmodel = 1
 
-    
     feature = ecg_data #(9,1008,1)
-
 
     input_blob = next(iter(net.input_info))
     output_info = net.outputs
@@ -76,7 +77,7 @@ def go_throught_model(unlabel_data):
         pred_9_lead.append(pred_single_lead)
     pred_9_lead = np.array(pred_9_lead)# (9,n,1008) 对应（9导联，n（9）片段数，1008个点）n个片段会在外面使用extract_wave函数提取并拼接
     return pred_9_lead
-
+# endregion
 
 # region 整理导联，滑窗，频率
 # 把有重叠的滑窗片段拼接好 in (9,1008) out (1,5008)
@@ -91,7 +92,7 @@ def concatenate_windows(model_out):
     combine_modelout.extend(model_out[len(model_out)-1][1008-discard_length-step:1008])#最后一个片段不舍弃，全部要
     return combine_modelout
 
-# 遍历9个导联，每导联调用一次concatenate_windows函数 in (9,9,1008) out (9,5008)
+# 遍历9个导联，每导联调用一次concatenate_windows函数 in (9,9,1008) out (9,5000)
 def loop_9_lead(model_out_9_lead):
     
     combine_result_9_lead = []
@@ -100,8 +101,12 @@ def loop_9_lead(model_out_9_lead):
         combine_result = concatenate_windows(model_out)
         combine_result_9_lead.append(combine_result)# （n,5008)
     combine_result_9_lead = np.array(combine_result_9_lead)# (9,5008)9个导联的分割结果
-    return combine_result_9_lead
-# 将数据从 500 Hz 重采样到 128 Hz
+
+    # 去掉每一行的之前多加的8个点
+    trimmed_label = combine_result_9_lead[:, :-8]# (9,5000)
+    return trimmed_label
+
+
 def downsample(trimmed_array):
     # 确认 trimmed_array 的形状是 (9, 5000)
     assert trimmed_array.shape == (9, 5000), "The shape of trimmed array is not correct."
@@ -118,15 +123,9 @@ def downsample(trimmed_array):
 # endregion
 
 # region 前处理代码
-# 将数据从 128 Hz 重采样到 500 Hz   in(12,1280)   out(5000,12)
-def upsample(data_128hz):
-    # 新的采样点数目为 (500 / 128) * 原来的采样点数目
-    num_samples = int(500 / 128 * data_128hz.shape[1])
-    data_500hz = signal.resample(data_128hz, num_samples, axis=1).transpose() # data_500hz 12通道数据 (5000,12)
-    return data_500hz
 # 选取导联加0padding
-def zero_box_resize(data_12):
-    data_9 = data_12[:,[0,1,2,6,7,8,9,10,11]]# 只拿9个导联的数据 (5000,9)
+def zero_box_resize(data_12,select_lead_idx):
+    data_9 = data_12[:,select_lead_idx]# 只拿9个导联的数据 (5000,9)
     ecg_zero_box = np.concatenate((data_9,np.zeros((8,9))),axis=0) # 在后面补8个0，用于适配滑窗截取，(5008,9)
     return ecg_zero_box
 # endregion
@@ -187,26 +186,33 @@ def find_consecutive_lengths(wave):#返回输入的波的每一段连续的长�
     return lengths_ms, average_length
 
 
-def find_peaks(data_lead_x):#返回峰值点y坐标和平均峰值
+def found_peaks(data_lead_x):#返回峰值点y坐标和平均峰值
     current_peak = None
     current_peak_index = None
     peak_x, peak_y = [],[]
 
+    # 遍历输入数据，寻找峰值点
     for i, num in enumerate(data_lead_x):
-        if num != -1:
+        if num != -1:# 如果当前点不是-1
             if current_peak is None or num > current_peak:
+                # 更新当前峰值和峰值索引
                 current_peak = num
                 current_peak_index = i
-        else:
+        else: # 当前点是-1，表示一个峰值的结束
             if current_peak is not None:
+                # 将峰值点的索引和峰值添加到列表中
                 peak_x.append(current_peak_index)
                 peak_y.append(current_peak)
+                # 重置当前峰值和峰值索引
                 current_peak = None
                 current_peak_index = None
+
+     # 计算平均峰值
     if peak_y:
         average_peaks_value = round(sum(peak_y) / len(peak_y), 3)
     else:
         average_peaks_value = 0
+    # 返回峰值点索引列表，峰值点y坐标列表和平均峰值
     return peak_x, peak_y, average_peaks_value
 
 def get_heart_rate(peaks):
@@ -348,7 +354,7 @@ def elevation_assess(list1, list2):
     
 
 # endregion
-# 提取波形参数
+# region 提取波形参数
 def extract_perameter(data_12, label_9):
     label_9 = label_9.transpose() # 把label_9转成（5000，9）    data_12 已经是（5000，12）
     # 调用extract_wave函数，选择分析导联
@@ -366,9 +372,9 @@ def extract_perameter(data_12, label_9):
     t_len, average_len_t = find_consecutive_lengths(label_t)
 
     # 获取每个波段的最大值索引和高度和平均高度
-    peaks_p, p_h, average_peaks_value_p = find_peaks(data_lead_p)
-    peaks_qrs, qrs_h, average_peaks_value_qrs = find_peaks(data_lead_qrs)
-    peaks_t, t_h, average_peaks_value_t = find_peaks(data_lead_t)
+    peaks_p, p_h, average_peaks_value_p = found_peaks(data_lead_p)#data_lead_p是5000个点，在是p波的地方是电压值，在不是p波的地方就是-1
+    peaks_qrs, qrs_h, average_peaks_value_qrs = found_peaks(data_lead_qrs)
+    peaks_t, t_h, average_peaks_value_t = found_peaks(data_lead_t)
 
     # 求心率
     rr_interval, average_rr, heart_rate= get_heart_rate(peaks_qrs)
@@ -428,66 +434,25 @@ def extract_perameter(data_12, label_9):
 
 # endregion
 
-# 在view中被调用的函数，以到降噪后的数据（12，1280）作为输入，重采样到5000个点，选择分析导联之后再调用go_throught_model，最后还要降采样回去得到(9,1280)
+# endregion
+# region 在view中被调用的函数，以降噪后的数据（5000，12）作为输入,选择分析导联之后再调用go_throught_model
 def segment_2s(denoise_data):
-    data_500hz = upsample(denoise_data)
-    ecg_zero_box = zero_box_resize(data_500hz)
-    model_out_9_lead = go_throught_model(ecg_zero_box)# model_out_9_lead (9,9,1008)(9导联,9个有重叠片段,每段长度1008)
+    select_lead_idx  = [0,1,2,6,7,8,9,10,11]
+    ecg_zero_box = zero_box_resize(denoise_data,select_lead_idx) # in (5000,12) out (5008,9)
+    model_out_9_lead = go_throught_model(ecg_zero_box)# in (5008,9)  out (9,9,1008)(9导联,9个有重叠片段,每段长度1008)
     # 循环9个导联，得到9个导联的滑窗拼接好的标签
-    combine_result_9_lead = loop_9_lead(model_out_9_lead)# (9,5008)9个导联的分割结果
-
-    # 去掉每一行的之前多加的8个点
-    trimmed_label = combine_result_9_lead[:, :-8]# (9,5000)
+    combine_result_9_lead = loop_9_lead(model_out_9_lead)# in(9,9,1008) out(9,5000) 9个导联的分割结果
 
     # 提取特征参数，需要输入原始信号数据和预测的标签数据，输出为字典
-    result = extract_perameter(data_500hz, trimmed_label)
+    perametera = extract_perameter(denoise_data, combine_result_9_lead)
 
     # 调用downsample函数,把每一个导联变回1280个点
-    downsampled_points = downsample(trimmed_label)# (9,1280）
+    downsampled_points = downsample(combine_result_9_lead)# (9,1280）
 
-    return downsampled_points, result
-
-
+    return downsampled_points, perametera
 
 
+# endregion
 
-# region abandon主函数用于测试openvino模型是否能跑通
-# if __name__ == "__main__":
-
-#     initialize_variable_s()
-#     file_path = '/Users/xingyulu/Desktop/文件汇总/txtForDjango/刘加义-20180703-195634_raw_0_696320_00004.txt'
-
-#     with open(file_path, 'r', encoding='utf-8') as file:
-#         file_content = file.read()
-#         lines = file_content.splitlines()  # len() = 1280
-#         data = []
-#         for line in lines:
-#             values = line.split()  # 按空格拆分每行的数值
-#             data.extend([float(x) for x in values])
-
-#     row = int(len(data)/12)
-#     # 将数据转换为 numpy 数组并重塑为 (12, 1280)
-#     data_128hz = np.array(data).reshape(row, 12).T  # 12通道数据 (12,1280)
-
-#     # 将数据从 128 Hz 重采样到 500 Hz
-#     # 新的采样点数目为 (500 / 128) * 原来的采样点数目
-#     num_samples = int(500 / 128 * data_128hz.shape[1])
-#     data_500hz = signal.resample(data_128hz, num_samples, axis=1).transpose() # data_500hz 12通道数据 (5000,12)
-#     input_lead = [0,1,2,6,7,8,9,10,11]
-#     ecg_data = data_500hz[:,input_lead]# ecg_data 9通道数据 (5000,9)
-#     zero_box = np.zeros((8,9))
-#     ecg_zero_box = np.concatenate((ecg_data,zero_box),axis=0) # (5008,9)
-#     model_out_9_lead = go_throught_model(ecg_zero_box)# model_out_9_lead (9,9,1008)(9导联,9个有重叠片段,每段长度1008)
-
-#     combine_result_9_lead = []
-#     for lead_idx in range(9):
-#         model_out = model_out_9_lead[lead_idx]
-#         one_of_lead_qrs, pred, qrs_pred, t_pred, combine_result = extract_wave(ecg_zero_box, model_out, lead_idx)
-
-#         combine_result_9_lead.append(combine_result)
-#     combine_result_9_lead = np.array(combine_result_9_lead)# (9,5008)9个导联的分割结果
-    
-
-#     endregion
 
 
